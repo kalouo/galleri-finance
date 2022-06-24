@@ -1,0 +1,3 @@
+build/
+.secret
+__pycache__/
