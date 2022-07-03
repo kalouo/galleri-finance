@@ -30,4 +30,5 @@ chinstrap:
     lang: smartpy
 
     # test: smartpy, pytest, smartpy, cameligo, pascaligo, reasonligo, jsligo
-    test: pytest
+    test: smartpy
+    
