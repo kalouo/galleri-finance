@@ -2,10 +2,14 @@
 import smartpy as sp
 
 CommonLib = sp.io.import_script_from_url("file:contracts/lib/commonLib.py")
+Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
 
 
 class LoanCore(CommonLib.Ownable):
-    def __init__(self, owner):
+    def __init__(self, owner, lendingNoteContract=None):
+        self.init(**self.get_initial_storage(lendingNoteContract))
+
+        # Libraries
         CommonLib.Ownable.__init__(self, owner)
 
     @sp.entry_point
@@ -31,6 +35,24 @@ class LoanCore(CommonLib.Ownable):
     @sp.entry_point
     def claim(self):
         None
+
+    # Admin Functions:
+    @sp.entry_point
+    def setLendingNoteContract(self, contractAddress):
+        sp.set_type(contractAddress, sp.TAddress)
+        self._onlyOwner()
+
+        self.data.lendingNoteContract = contractAddress
+
+    def get_initial_storage(self, lendingNoteContract):
+        storage = {}
+
+        if lendingNoteContract is None:
+            storage['lendingNoteContract'] = Constants.NULL_ADDRESS
+        else:
+            storage['lendingNoteContract'] = lendingNoteContract
+
+        return storage
 
 
 sp.add_compilation_target("LoanCore", LoanCore(

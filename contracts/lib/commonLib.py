@@ -4,8 +4,7 @@ import smartpy as sp
 
 class Ownable(sp.Contract):
     def __init__(self, owner: sp.TAddress) -> None:
-        self.init_type(sp.TRecord(owner=sp.TAddress))
-        self.init(owner=owner)
+        self.update_initial_storage(owner=owner)
 
     def _onlyOwner(self):
         sp.verify(self.data.owner == sp.sender,
