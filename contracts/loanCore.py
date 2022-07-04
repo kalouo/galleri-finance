@@ -1,5 +1,4 @@
 # SmartPy Code
-from lib2to3.pgen2 import token
 import smartpy as sp
 
 Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
