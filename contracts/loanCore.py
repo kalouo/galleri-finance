@@ -13,7 +13,7 @@ class LoanCore(LendingNoteLib.LendingNote):
         self.update_initial_storage(**self.get_initial_storage())
 
     @sp.entry_point
-    def startLoan(self, lender, borrower, loanCurrency, tokenId, amount):
+    def start_loan(self, lender, borrower, loanCurrency, tokenId, amount):
         # Type checks.
         sp.set_type(lender, sp.TAddress)
         sp.set_type(borrower, sp.TAddress)

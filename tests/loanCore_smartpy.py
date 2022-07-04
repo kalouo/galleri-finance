@@ -80,7 +80,7 @@ def test():
     )),
 
     loanAmount = 1
-    scenario += loanCore.startLoan(lender=_bob.address,
+    scenario += loanCore.start_loan(lender=_bob.address,
                                    borrower=_alice.address, loanCurrency=fungibleToken.address, tokenId=0, amount=loanAmount)
 
     # Verify that Bob owns the lending note.
