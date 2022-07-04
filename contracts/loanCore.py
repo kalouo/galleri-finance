@@ -1,30 +1,41 @@
 # SmartPy Code
+from lib2to3.pgen2 import token
 import smartpy as sp
 
-CommonLib = sp.io.import_script_from_url("file:contracts/lib/commonLib.py")
 Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
+LendingNoteLib = sp.io.import_script_from_url("file:contracts/LendingNote.py")
+FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2Lib.py")
 
 
-class LoanCore(CommonLib.Ownable):
-    def __init__(self, owner, lendingNoteContract=None):
-        self.init(**self.get_initial_storage(lendingNoteContract))
+class LoanCore(LendingNoteLib.LendingNote):
+    def __init__(self, admin, metadata):
+        LendingNoteLib.LendingNote.__init__(self, admin, metadata)
 
-        # Libraries
-        CommonLib.Ownable.__init__(self, owner)
+        self.update_initial_storage(**self.get_initial_storage())
 
     @sp.entry_point
-    def startLoan(self):
-        # Checks that the caller is the origination controller
-        # Needs loan core admin lib
-        # Transfers the collateral token to the collateral vault
-        # Needs test FA2 NFT
-        # Transfers the loan token to itself
-        # Needs FA1.2 fungible
-        # Needs FA2 fungible
-        # Writes loan details to contract storage
-        # Emits a lender's note to the lender
-        # Transfers the principal to the borrower minus platform fees.
-        # Needs a fee controller contract
+    def startLoan(self, lender, borrower, loanCurrency, tokenId, amount):
+        # Type checks.
+        sp.set_type(lender, sp.TAddress)
+        sp.set_type(borrower, sp.TAddress)
+        sp.set_type(loanCurrency, sp.TAddress)
+        sp.set_type(amount, sp.TNat)
+        sp.set_type(tokenId, sp.TNat)
+
+        # Verify that the call is coming from the origination controller.
+
+        # Write loan to contract storage.
+
+        # Transfer collateral to the collateral vault.
+
+        # Transfer loan amount to the borrower (net of fees)
+        self.transfer_funds(lender, borrower, loanCurrency, tokenId, amount)
+
+        # Issue a transferable lending note to the lender.
+        self.issue_lending_note(lender)
+
+        # Transfer loan to borrower
+
         # Emits an event
         None
 
@@ -36,25 +47,29 @@ class LoanCore(CommonLib.Ownable):
     def claim(self):
         None
 
-    # Admin Functions:
-    @sp.entry_point
-    def setLendingNoteContract(self, contractAddress):
-        sp.set_type(contractAddress, sp.TAddress)
-        self._onlyOwner()
+    def issue_lending_note(self, lender):
+        sp.set_type(lender, sp.TAddress)
+        self.mint([LendingNoteLib.MintArg.make(lender)])
 
-        self.data.lendingNoteContract = contractAddress
+    def transfer_funds(self, _from, _to, _currency, _tokenId, _amount):
+        sp.set_type(_from, sp.TAddress)
+        sp.set_type(_to, sp.TAddress)
+        sp.set_type(_currency, sp.TAddress)
+        sp.set_type(_amount, sp.TNat)
+        sp.set_type(_tokenId, sp.TNat)
 
-    def get_initial_storage(self, lendingNoteContract):
+        FA2Lib.Transfer.execute(_currency, _from, _to, _tokenId, _amount)
+
+    def get_initial_storage(self):
         storage = {}
-
-        if lendingNoteContract is None:
-            storage['lendingNoteContract'] = Constants.NULL_ADDRESS
-        else:
-            storage['lendingNoteContract'] = lendingNoteContract
 
         return storage
 
 
-sp.add_compilation_target("LoanCore", LoanCore(
-    owner=sp.address("tz1Rn1TTJo3RwLfDN2XyjQgQ2nf8hcdvqrsy")
-))
+sp.add_compilation_target(
+    "LoanCore",
+    LoanCore(
+        admin=sp.address("tz1YtuZ4vhzzn7ssCt93Put8U9UJDdvCXci4"),
+        metadata=sp.utils.metadata_of_url("http://example.com")
+    )
+)

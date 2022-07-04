@@ -1,9 +1,9 @@
 import smartpy as sp
 
 LoanCore = sp.io.import_script_from_url("file:contracts/loanCore.py")
-LendingNote = sp.io.import_script_from_url("file:contracts/lendingNote.py")
 Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
 FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2Lib.py")
+# FA2 = sp.io.import_script_from_url("file:contracts/lib/FA2.py")
 
 SAMPLE_METADATA = sp.utils.metadata_of_url("http://example.com")
 
@@ -20,16 +20,14 @@ def test():
     # Initialize contracts
     nonFungibleToken = FA2Lib.OwnableFA2NFT(_admin.address, SAMPLE_METADATA)
     fungibleToken = FA2Lib.OwnableFA2Fungible(_admin.address, SAMPLE_METADATA)
-    loanCore = LoanCore.LoanCore(_admin.address)
-    lendingNote = LendingNote.LendingNote(loanCore.address, SAMPLE_METADATA)
+    loanCore = LoanCore.LoanCore(_admin.address, SAMPLE_METADATA)
 
     # Add contracts to scenarios
     scenario += nonFungibleToken
     scenario += fungibleToken
     scenario += loanCore
-    scenario += lendingNote
 
-    TOKEN_0 = FA2Lib.make_metadata(
+    TOKEN_0 = FA2Lib.Utils.make_metadata(
         name="Example FA2",
         decimals=0,
         symbol="EFA2")
@@ -53,7 +51,7 @@ def test():
         _bob.address, 0)] == sp.nat(100_000_000_000))
 
     # Mint NFT to Bob.
-    NFT1 = FA2Lib.make_metadata(
+    NFT1 = FA2Lib.Utils.make_metadata(
         name="Example FA2",
         decimals=0,
         symbol="EFA2-2")
@@ -66,18 +64,30 @@ def test():
 
     # Verify that NFT was minted to Bob.
     # Reflects NFT ledger type.
-    # See https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md#nft-asset-contract 
+    # See https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md#nft-asset-contract
     scenario.verify(nonFungibleToken.data.ledger[0] == _bob.address)
 
-    # `lendingNote` is deployed with the correct administrator
-    scenario.verify(lendingNote.data.administrator == loanCore.address)
+    # Alice approves the loan contract to spend her funds.
+    scenario += fungibleToken.update_operators([sp.variant("add_operator", sp.record(
+        owner=_bob.address,
+        operator=loanCore.address,
+        token_id=0
+    ))]).run(sender=_bob)
 
-    # `setLendingNoteContract` cannot be called by a non-owner
-    scenario += loanCore.setLendingNoteContract(
-        lendingNote.address).run(sender=_alice.address, valid=False)
+    # Verify that permissions have been given.
+    scenario.verify(fungibleToken.data.operators.contains(
+        sp.record(owner=_bob.address, operator=loanCore.address, token_id=0)
+    )),
 
-    # `setLendingNoteContract` cannot be called by the contract owner
-    scenario += loanCore.setLendingNoteContract(
-        lendingNote.address).run(sender=_admin.address, valid=True)
+    loanAmount = 1
+    scenario += loanCore.startLoan(lender=_bob.address,
+                                   borrower=_alice.address, loanCurrency=fungibleToken.address, tokenId=0, amount=loanAmount)
 
-    scenario.verify(loanCore.data.lendingNoteContract == lendingNote.address)
+    # Verify that Bob owns the lending note.
+    scenario.verify(loanCore.data.ledger[0] == _bob.address)
+
+    scenario.verify(fungibleToken.data.ledger[sp.pair(
+        _bob.address, 0)] == sp.nat(100_000_000_000 - loanAmount))
+
+    scenario.verify(fungibleToken.data.ledger[sp.pair(
+        _alice.address, 0)] == sp.nat(100_000_000_000 + loanAmount))
