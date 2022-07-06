@@ -36,6 +36,10 @@ def test():
     scenario.verify(
         loanCore.data.whitelisted_currencies[fungibleToken.address] == PRECISION)
 
+    # Set processing fee of 1%
+    scenario += loanCore.set_processing_fee(100).run(sender=_admin)
+    scenario.verify(loanCore.data.processing_fee == sp.nat(100))
+
     TOKEN_0 = FA2Lib.Utils.make_metadata(
         name="Example FA2",
         decimals=0,
@@ -44,20 +48,20 @@ def test():
     # Mint fungible tokens to Alice and Bob.
     scenario += fungibleToken.mint([sp.record(
         to_=_alice.address,
-        amount=100_000_000_000,
+        amount=sp.nat(1000) * PRECISION,
         token=sp.variant("new", TOKEN_0)
     ), sp.record(
         to_=_bob.address,
-        amount=100_000_000_000,
+        amount=sp.nat(1000) * PRECISION,
         token=sp.variant("existing", 0)
     )]).run(sender=_admin)
 
     # Verify that fungible tokens have been minted.
     scenario.verify(fungibleToken.data.ledger[sp.pair(
-        _alice.address, 0)] == sp.nat(100_000_000_000))
+        _alice.address, 0)] == sp.nat(1000) * PRECISION)
 
     scenario.verify(fungibleToken.data.ledger[sp.pair(
-        _bob.address, 0)] == sp.nat(100_000_000_000))
+        _bob.address, 0)] == sp.nat(1000) * PRECISION)
 
     # Mint NFT to Bob.
     NFT1 = FA2Lib.Utils.make_metadata(
@@ -88,15 +92,15 @@ def test():
         sp.record(owner=_bob.address, operator=loanCore.address, token_id=0)
     )),
 
-    loanAmount = 1
+    loanAmount = sp.nat(100) * PRECISION
     scenario += loanCore.start_loan(lender=_bob.address,
-                                    borrower=_alice.address, loanCurrency=fungibleToken.address, tokenId=0, amount=loanAmount)
+                                    borrower=_alice.address, currency=fungibleToken.address, tokenId=0, amount=loanAmount)
 
     # Verify that Bob owns the lending note.
     scenario.verify(loanCore.data.ledger[0] == _bob.address)
 
     scenario.verify(fungibleToken.data.ledger[sp.pair(
-        _bob.address, 0)] == sp.nat(100_000_000_000 - loanAmount))
+        _bob.address, 0)] == sp.nat(900) * PRECISION)
 
     scenario.verify(fungibleToken.data.ledger[sp.pair(
-        _alice.address, 0)] == sp.nat(100_000_000_000 + loanAmount))
+        _alice.address, 0)] == sp.nat(1099) * PRECISION)

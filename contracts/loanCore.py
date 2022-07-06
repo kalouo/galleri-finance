@@ -13,37 +13,37 @@ class LoanCore(LendingNoteLib.LendingNote):
         self.update_initial_storage(**self.get_initial_storage())
 
     @sp.entry_point
-    def start_loan(self, lender, borrower, loanCurrency, tokenId, amount):
+    def start_loan(self, lender, borrower, currency, tokenId, amount):
         # Type checks.
         sp.set_type(lender, sp.TAddress)
         sp.set_type(borrower, sp.TAddress)
-        sp.set_type(loanCurrency, sp.TAddress)
+        sp.set_type(currency, sp.TAddress)
         sp.set_type(amount, sp.TNat)
         sp.set_type(tokenId, sp.TNat)
 
         # Verify that the call is coming from the origination controller.
 
         # Verify that the currency is whitelisted
-        self.verify_whitelisted_currency(loanCurrency)
+        self.verify_whitelisted_currency(currency)
+
         # Write loan to contract storage.
 
         # Transfer collateral to the collateral vault.
 
         # Transfer loan amount to the contract
-        self.transfer_funds(lender, sp.self_address,
-                            loanCurrency, tokenId, amount)
+        self.transfer_funds(lender, sp.self_address, currency, tokenId, amount)
 
-        # Deduct fees and commissions
-        # processing_fee = sp.ediv(token at precision x percentage at precision, precision)
+        # Calculate loan amount net of processing fee.
+        precision = self.data.whitelisted_currencies[currency]
+        processing_fee = self.compute_processing_fee(amount, precision)
+        net_amount = sp.as_nat(amount - processing_fee)
 
-        # Transfer loan amount to the borrower
+        # Transfer net loan amount to the borrower.
         self.transfer_funds(sp.self_address, borrower,
-                            loanCurrency, tokenId, amount)
+                            currency, tokenId, net_amount)
 
         # Issue a transferable lending note to the lender.
         self.issue_lending_note(lender)
-
-        # Transfer loan to borrower
 
         # Emits an event
         None
@@ -55,6 +55,14 @@ class LoanCore(LendingNoteLib.LendingNote):
     @sp.entry_point
     def claim(self):
         None
+
+    @sp.entry_point
+    def set_processing_fee(self, new_processing_fee):
+        sp.set_type(new_processing_fee, sp.TNat)
+        sp.verify(self.is_administrator(sp.sender), "NOT_ADMIN")
+        sp.verify(new_processing_fee < 250, "INVALID_FEE")
+
+        self.data.processing_fee = new_processing_fee
 
     @sp.entry_point
     def whitelist_currency(self, currency, precision):
@@ -81,8 +89,23 @@ class LoanCore(LendingNoteLib.LendingNote):
         sp.verify(self.data.whitelisted_currencies.contains(
             currency) == True, "CURRENCY_NOT_AUTHORIZED")
 
+    def compute_processing_fee(self, loan_amount, currency_precision):
+        sp.set_type(loan_amount, sp.TNat)
+        sp.set_type(currency_precision, sp.TNat)
+
+        return self.split_tokens(loan_amount, self.data.processing_fee, currency_precision)
+
+    def split_tokens(self, base_amount, basis_points, precision):
+        sp.set_type(base_amount, sp.TNat)
+        sp.set_type(basis_points, sp.TNat)
+        sp.set_type(precision, sp.TNat)
+
+        multiplier = (basis_points * precision) / Constants.BASIS_POINT_DIVISOR
+        return ((base_amount * multiplier) // precision)
+
     def get_initial_storage(self):
         storage = {}
+        storage['processing_fee'] = sp.nat(0)
         storage['whitelisted_currencies'] = sp.big_map(
             tkey=sp.TAddress, tvalue=sp.TNat)
 
