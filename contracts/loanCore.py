@@ -23,12 +23,22 @@ class LoanCore(LendingNoteLib.LendingNote):
 
         # Verify that the call is coming from the origination controller.
 
+        # Verify that the currency is whitelisted
+        self.verify_whitelisted_currency(loanCurrency)
         # Write loan to contract storage.
 
         # Transfer collateral to the collateral vault.
 
-        # Transfer loan amount to the borrower (net of fees)
-        self.transfer_funds(lender, borrower, loanCurrency, tokenId, amount)
+        # Transfer loan amount to the contract
+        self.transfer_funds(lender, sp.self_address,
+                            loanCurrency, tokenId, amount)
+
+        # Deduct fees and commissions
+        # processing_fee = sp.ediv(token at precision x percentage at precision, precision)
+
+        # Transfer loan amount to the borrower
+        self.transfer_funds(sp.self_address, borrower,
+                            loanCurrency, tokenId, amount)
 
         # Issue a transferable lending note to the lender.
         self.issue_lending_note(lender)
@@ -46,6 +56,14 @@ class LoanCore(LendingNoteLib.LendingNote):
     def claim(self):
         None
 
+    @sp.entry_point
+    def whitelist_currency(self, currency, precision):
+        sp.set_type(currency, sp.TAddress)
+        sp.set_type(precision, sp.TNat)
+
+        sp.verify(self.is_administrator(sp.sender), "NOT_ADMIN")
+        self.data.whitelisted_currencies[currency] = precision
+
     def issue_lending_note(self, lender):
         sp.set_type(lender, sp.TAddress)
         self.mint([LendingNoteLib.MintArg.make(lender)])
@@ -59,8 +77,14 @@ class LoanCore(LendingNoteLib.LendingNote):
 
         FA2Lib.Transfer.execute(_currency, _from, _to, _tokenId, _amount)
 
+    def verify_whitelisted_currency(self, currency):
+        sp.verify(self.data.whitelisted_currencies.contains(
+            currency) == True, "CURRENCY_NOT_AUTHORIZED")
+
     def get_initial_storage(self):
         storage = {}
+        storage['whitelisted_currencies'] = sp.big_map(
+            tkey=sp.TAddress, tvalue=sp.TNat)
 
         return storage
 

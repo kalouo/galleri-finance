@@ -27,6 +27,15 @@ def test():
     scenario += fungibleToken
     scenario += loanCore
 
+    # Whitelist the contract
+    PRECISION = sp.nat(1000000000000000000)
+
+    scenario += loanCore.whitelist_currency(
+        currency=fungibleToken.address, precision=PRECISION).run(sender=_admin)
+
+    scenario.verify(
+        loanCore.data.whitelisted_currencies[fungibleToken.address] == PRECISION)
+
     TOKEN_0 = FA2Lib.Utils.make_metadata(
         name="Example FA2",
         decimals=0,
@@ -81,7 +90,7 @@ def test():
 
     loanAmount = 1
     scenario += loanCore.start_loan(lender=_bob.address,
-                                   borrower=_alice.address, loanCurrency=fungibleToken.address, tokenId=0, amount=loanAmount)
+                                    borrower=_alice.address, loanCurrency=fungibleToken.address, tokenId=0, amount=loanAmount)
 
     # Verify that Bob owns the lending note.
     scenario.verify(loanCore.data.ledger[0] == _bob.address)
