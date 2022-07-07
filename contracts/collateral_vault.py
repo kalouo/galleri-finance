@@ -70,9 +70,11 @@ class CollateralVault(CommonLib.Ownable):
         FA2Lib.Transfer.execute(_currency, _from, _to, _tokenId, _amount)
 
 
-# sp.add_compilation_target(
-#     "collateral_vault",
-#     CollateralVault(
-#         owner=Constants.NULL_ADDRESS,
-#     )
-# )
+if __name__ == "__main__":
+
+    sp.add_compilation_target(
+        "collateral_vault",
+        CollateralVault(
+            owner=Constants.NULL_ADDRESS,
+        )
+    )
