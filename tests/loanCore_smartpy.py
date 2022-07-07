@@ -34,8 +34,10 @@ def test():
         currency=fungibleToken.address, precision=PRECISION).run(sender=_admin)
 
     scenario.verify(
-        loanCore.data.whitelisted_currencies[fungibleToken.address] == PRECISION)
+        loanCore.data.permitted_currencies[fungibleToken.address] == True)
 
+    scenario.verify(
+        loanCore.data.currency_precision[fungibleToken.address] == PRECISION)
     # Set processing fee of 1%
     scenario += loanCore.set_processing_fee(100).run(sender=_admin)
     scenario.verify(loanCore.data.processing_fee == sp.nat(100))
@@ -94,7 +96,11 @@ def test():
 
     loanAmount = sp.nat(100) * PRECISION
     scenario += loanCore.start_loan(lender=_bob.address,
-                                    borrower=_alice.address, currency=fungibleToken.address, tokenId=0, amount=loanAmount)
+                                    borrower=_alice.address,
+                                    loan_denomination_contract=fungibleToken.address,
+                                    loan_denomination_id=0,
+                                    loan_principal_amount=loanAmount
+                                    )
 
     # Verify that Bob owns the lending note.
     scenario.verify(loanCore.data.ledger[0] == _bob.address)
