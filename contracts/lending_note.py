@@ -61,7 +61,7 @@ class MintArg:
 
 
 sp.add_compilation_target(
-    "LendingNote",
+    "lending_note",
     LendingNote(
         admin=sp.address("tz1YtuZ4vhzzn7ssCt93Put8U9UJDdvCXci4"),
         metadata=sp.utils.metadata_of_url("http://example.com")

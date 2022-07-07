@@ -2,10 +2,10 @@
 import smartpy as sp
 
 Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
-LendingNoteLib = sp.io.import_script_from_url("file:contracts/LendingNote.py")
+LendingNoteLib = sp.io.import_script_from_url("file:contracts/lending_note.py")
 FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2Lib.py")
-CollateralVault = sp.io.import_script_from_url(
-    "file:contracts/CollateralVault.py")
+CollateralVaultLib = sp.io.import_script_from_url(
+    "file:contracts/collateral_vault.py")
 
 
 class LoanCore(LendingNoteLib.LendingNote):
@@ -42,7 +42,7 @@ class LoanCore(LendingNoteLib.LendingNote):
 
         # Transfer collateral to the collateral vault.
 
-        collateral_vault = sp.contract(CollateralVault.Deposit.get_type(),
+        collateral_vault = sp.contract(CollateralVaultLib.Deposit.get_type(),
                                        self.data.collateral_vault_address,
                                        entry_point='deposit').open_some()
 
@@ -161,7 +161,7 @@ class LoanCore(LendingNoteLib.LendingNote):
 
 
 sp.add_compilation_target(
-    "LoanCore",
+    "loan_core",
     LoanCore(
         admin=sp.address("tz1YtuZ4vhzzn7ssCt93Put8U9UJDdvCXci4"),
         metadata=sp.utils.metadata_of_url("http://example.com")

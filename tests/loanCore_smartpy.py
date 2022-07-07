@@ -1,15 +1,14 @@
 import smartpy as sp
 
-LoanCore = sp.io.import_script_from_url("file:contracts/loanCore.py")
+LoanCore = sp.io.import_script_from_url("file:contracts/loan_core.py")
 Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
 FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2Lib.py")
-CollateralVault = sp.io.import_script_from_url(
-    "file:contracts/collateralVault.py")
+CollateralVault = sp.io.import_script_from_url("file:contracts/collateral_vault.py")
 
 SAMPLE_METADATA = sp.utils.metadata_of_url("http://example.com")
 
 
-@sp.add_test(name="A Test")
+@sp.add_test(name="Loan Core Test")
 def test():
     scenario = sp.test_scenario()
 

@@ -1,11 +1,23 @@
 import smartpy as sp
 
+Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
 CommonLib = sp.io.import_script_from_url("file:contracts/lib/CommonLib.py")
 FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2Lib.py")
 
 
-class ErrorMessage:
-    NOT_ADMIN = "{}NOT_ADMIN"
+# class ErrorMessage:
+#     NOT_ADMIN = "{}NOT_ADMIN"
+
+
+class Deposit:
+    def get_type():
+        return sp.TRecord(
+            depositor=sp.TAddress,
+            collateral_contract=sp.TAddress,
+            collateral_token_id=sp.TNat,
+            amount=sp.TNat,
+            deposit_id=sp.TNat
+        )
 
 
 class CollateralVault(CommonLib.Ownable):
@@ -58,29 +70,9 @@ class CollateralVault(CommonLib.Ownable):
         FA2Lib.Transfer.execute(_currency, _from, _to, _tokenId, _amount)
 
 
-class Deposit:
-    def get_type():
-        return sp.TRecord(
-            depositor=sp.TAddress,
-            collateral_contract=sp.TAddress,
-            collateral_token_id=sp.TNat,
-            amount=sp.TNat,
-            deposit_id=sp.TNat
-        )
-
-    def get_type():
-        return sp.TRecord(
-            depositor=sp.TAddress,
-            collateral_contract=sp.TAddress,
-            collateral_token_id=sp.TNat,
-            amount=sp.TNat,
-            deposit_id=sp.TNat
-        )
-
-
 # sp.add_compilation_target(
-#     "CollateralVault",
+#     "collateral_vault",
 #     CollateralVault(
-#         owner=sp.address("tz1YtuZ4vhzzn7ssCt93Put8U9UJDdvCXci4"),
+#         owner=Constants.NULL_ADDRESS,
 #     )
 # )
