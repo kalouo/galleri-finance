@@ -4,6 +4,8 @@ import smartpy as sp
 Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
 LendingNoteLib = sp.io.import_script_from_url("file:contracts/LendingNote.py")
 FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2Lib.py")
+CollateralVault = sp.io.import_script_from_url(
+    "file:contracts/CollateralVault.py")
 
 
 class LoanCore(LendingNoteLib.LendingNote):
@@ -20,8 +22,8 @@ class LoanCore(LendingNoteLib.LendingNote):
         loan_denomination_contract,
         loan_denomination_id,
         loan_principal_amount,
-        # _collateral_contract,
-        # _collateral_token_id,
+        collateral_contract,
+        collateral_token_id,
         # _loan_duration,
     ):
         # Type checks.
@@ -39,6 +41,18 @@ class LoanCore(LendingNoteLib.LendingNote):
         # Write loan to contract storage.
 
         # Transfer collateral to the collateral vault.
+
+        collateral_vault = sp.contract(CollateralVault.Deposit.get_type(),
+                                       self.data.collateral_vault_address,
+                                       entry_point='deposit').open_some()
+
+        # payload = sp.record(asset_contract_address=asset_contract_address,
+        #                     asset_token_id=asset_token_id, recipient=sp.sender)
+
+        payload = sp.record(depositor=borrower, collateral_contract=collateral_contract,
+                            collateral_token_id=collateral_token_id, amount=1, deposit_id=1)
+
+        sp.transfer(payload, sp.mutez(0), collateral_vault)
 
         # Transfer loan amount to the contract
         self.transfer_funds(lender,
@@ -95,6 +109,12 @@ class LoanCore(LendingNoteLib.LendingNote):
         self.data.permitted_currencies[currency] = True
         self.data.currency_precision[currency] = precision
 
+    @sp.entry_point
+    def set_collateral_vault(self, collateral_vault_address):
+        sp.set_type(collateral_vault_address, sp.TAddress)
+        sp.verify(self.is_administrator(sp.sender), "NOT_ADMIN")
+        self.data.collateral_vault_address = collateral_vault_address
+
     def issue_lending_note(self, lender):
         sp.set_type(lender, sp.TAddress)
         self.mint([LendingNoteLib.MintArg.make(lender)])
@@ -129,6 +149,8 @@ class LoanCore(LendingNoteLib.LendingNote):
     def get_initial_storage(self):
         storage = {}
         storage['processing_fee'] = sp.nat(0)
+
+        storage["collateral_vault_address"] = Constants.NULL_ADDRESS
 
         storage['permitted_currencies'] = sp.big_map(
             tkey=sp.TAddress, tvalue=sp.TBool)
