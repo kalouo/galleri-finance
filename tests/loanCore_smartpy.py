@@ -56,6 +56,14 @@ def test():
     scenario.verify(loanCore.data.collateral_vault_address ==
                     collateralVault.address)
 
+    scenario += loanCore.set_loan_note_contracts(
+        borrower_note_address=borrowerNote.address,
+        lender_note_address=lenderNote.address
+    ).run(sender=_admin)
+
+    scenario.verify(loanCore.data.borrower_note_address == borrowerNote.address)
+    scenario.verify(loanCore.data.lender_note_address == lenderNote.address)
+
     TOKEN_0 = FA2Lib.Utils.make_metadata(
         name="Example FA2",
         decimals=0,

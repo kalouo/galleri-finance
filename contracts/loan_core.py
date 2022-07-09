@@ -116,6 +116,18 @@ class LoanCore(CommonLib.Ownable):
         self._onlyOwner()
         self.data.collateral_vault_address = collateral_vault_address
 
+    @sp.entry_point
+    def set_loan_note_contracts(self, borrower_note_address, lender_note_address):
+        sp.set_type(lender_note_address, sp.TAddress)
+        sp.set_type(borrower_note_address, sp.TAddress)
+
+        self._onlyOwner()
+
+        # A sequence of further verifications are required here.
+
+        self.data.lender_note_address = lender_note_address
+        self.data.borrower_note_address = borrower_note_address
+
     # def issue_lending_note(self, lender):
     #     sp.set_type(lender, sp.TAddress)
     #     self.mint([LoanNoteLib.MintArg.make(lender)])
@@ -152,6 +164,8 @@ class LoanCore(CommonLib.Ownable):
         storage['processing_fee'] = sp.nat(0)
 
         storage["collateral_vault_address"] = Constants.NULL_ADDRESS
+        storage["borrower_note_address"] = Constants.NULL_ADDRESS
+        storage["lender_note_address"] = Constants.NULL_ADDRESS
 
         storage['permitted_currencies'] = sp.big_map(
             tkey=sp.TAddress, tvalue=sp.TBool)
