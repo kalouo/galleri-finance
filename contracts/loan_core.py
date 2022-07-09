@@ -4,7 +4,7 @@ import smartpy as sp
 Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
 CommonLib = sp.io.import_script_from_url("file:contracts/lib/common_lib.py")
 LoanNoteLib = sp.io.import_script_from_url("file:contracts/loan_note.py")
-FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2Lib.py")
+FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2_lib.py")
 CollateralVaultLib = sp.io.import_script_from_url(
     "file:contracts/collateral_vault.py")
 

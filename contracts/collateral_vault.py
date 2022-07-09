@@ -2,7 +2,7 @@ import smartpy as sp
 
 Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
 CommonLib = sp.io.import_script_from_url("file:contracts/lib/common_lib.py")
-FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2Lib.py")
+FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2_lib.py")
 
 
 class Deposit:
