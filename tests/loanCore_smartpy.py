@@ -1,9 +1,11 @@
 import smartpy as sp
 
 LoanCore = sp.io.import_script_from_url("file:contracts/loan_core.py")
+LoanNote = sp.io.import_script_from_url("file:contracts/loan_note.py")
 Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
 FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2Lib.py")
-CollateralVault = sp.io.import_script_from_url("file:contracts/collateral_vault.py")
+CollateralVault = sp.io.import_script_from_url(
+    "file:contracts/collateral_vault.py")
 
 SAMPLE_METADATA = sp.utils.metadata_of_url("http://example.com")
 
@@ -22,11 +24,16 @@ def test():
     fungibleToken = FA2Lib.OwnableFA2Fungible(_admin.address, SAMPLE_METADATA)
     loanCore = LoanCore.LoanCore(_admin.address, SAMPLE_METADATA)
     collateralVault = CollateralVault.CollateralVault(loanCore.address)
+    borrowerNote = LoanNote.LoanNote(loanCore.address, SAMPLE_METADATA)
+    lenderNote = LoanNote.LoanNote(loanCore.address, SAMPLE_METADATA)
     # Add contracts to scenarios
     scenario += nonFungibleToken
     scenario += fungibleToken
+
     scenario += loanCore
     scenario += collateralVault
+    scenario += borrowerNote
+    scenario += lenderNote
 
     # Whitelist the contract
     PRECISION = sp.nat(1000000000000000000)

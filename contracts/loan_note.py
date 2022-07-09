@@ -5,9 +5,9 @@ FA2Lib = sp.io.import_script_from_url(
 
 
 class LoanNote(FA2Lib.Admin,
-           FA2Lib.Fa2Nft,
-           FA2Lib.OnchainviewBalanceOf,
-           ):
+               FA2Lib.Fa2Nft,
+               FA2Lib.OnchainviewBalanceOf,
+               ):
 
     def __init__(self, admin, metadata, token_metadata={}, ledger={}, policy=None, metadata_base=None):
         FA2Lib.Fa2Nft.__init__(self, metadata, token_metadata=token_metadata,
@@ -60,10 +60,12 @@ class MintArg:
         return sp.set_type_expr(sp.record(to_=to, metadata=MintArg.make_metadata("LN", "Lending LoanNote", 0)), MintArg.get_type())
 
 
-sp.add_compilation_target(
-    "loan_note",
-    LoanNote(
-        admin=sp.address("tz1YtuZ4vhzzn7ssCt93Put8U9UJDdvCXci4"),
-        metadata=sp.utils.metadata_of_url("http://example.com")
+if __name__ == "__main__":
+
+    sp.add_compilation_target(
+        "loan_note",
+        LoanNote(
+            admin=sp.address("tz1YtuZ4vhzzn7ssCt93Put8U9UJDdvCXci4"),
+            metadata=sp.utils.metadata_of_url("http://example.com")
+        )
     )
-)
