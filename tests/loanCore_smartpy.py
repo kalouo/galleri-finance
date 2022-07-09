@@ -61,7 +61,8 @@ def test():
         lender_note_address=lenderNote.address
     ).run(sender=_admin)
 
-    scenario.verify(loanCore.data.borrower_note_address == borrowerNote.address)
+    scenario.verify(loanCore.data.borrower_note_address ==
+                    borrowerNote.address)
     scenario.verify(loanCore.data.lender_note_address == lenderNote.address)
 
     TOKEN_0 = FA2Lib.Utils.make_metadata(
@@ -141,8 +142,10 @@ def test():
     # Verify that Bob owns the lender note.
     scenario.verify(lenderNote.data.ledger[0] == _bob.address)
 
-    #Verify that Bob owns the borrower note.
+    # Verify that Bob owns the borrower note.
     scenario.verify(borrowerNote.data.ledger[0] == _alice.address)
+
+    scenario.verify(loanCore.data.loan_id == 1)
 
     # Verify the NFT is locked in the collateral vaut.
     scenario.verify(nonFungibleToken.data.ledger[0] == collateralVault.address)

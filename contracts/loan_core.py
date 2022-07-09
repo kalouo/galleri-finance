@@ -81,8 +81,10 @@ class LoanCore(CommonLib.Ownable):
                             )
 
         # Issue borrower and lender notes.
-        self.issue_borrower_note(borrower)
-        self.issue_lender_note(lender)
+        self.issue_borrower_note(borrower, self.data.loan_id)
+        self.issue_lender_note(lender, self.data.loan_id)
+        
+        self._increment_loan_id()
 
         # Emits an event
 
@@ -129,13 +131,15 @@ class LoanCore(CommonLib.Ownable):
         self.data.lender_note_address = lender_note_address
         self.data.borrower_note_address = borrower_note_address
 
-    def issue_borrower_note(self, borrower):
+    def issue_borrower_note(self, borrower, loan_id):
         sp.set_type(borrower, sp.TAddress)
-        LoanNoteLib.Mint.execute(self.data.borrower_note_address, 0, borrower)
+        LoanNoteLib.Mint.execute(
+            self.data.borrower_note_address, loan_id, borrower)
 
-    def issue_lender_note(self, lender):
+    def issue_lender_note(self, lender, loan_id):
         sp.set_type(lender, sp.TAddress)
-        LoanNoteLib.Mint.execute(self.data.lender_note_address, 0, lender)
+        LoanNoteLib.Mint.execute(
+            self.data.lender_note_address, loan_id, lender)
 
     def transfer_funds(self, _from, _to, _currency, _tokenId, _amount):
         sp.set_type(_from, sp.TAddress)
@@ -164,8 +168,12 @@ class LoanCore(CommonLib.Ownable):
         multiplier = (basis_points * precision) / Constants.BASIS_POINT_DIVISOR
         return ((base_amount * multiplier) // precision)
 
+    def _increment_loan_id(self):
+        self.data.loan_id += 1
+
     def get_initial_storage(self):
         storage = {}
+        storage["loan_id"] = sp.nat(0)
         storage['processing_fee'] = sp.nat(0)
 
         storage["collateral_vault_address"] = Constants.NULL_ADDRESS
