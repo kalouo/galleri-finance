@@ -2,15 +2,15 @@
 import smartpy as sp
 
 Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
-LendingNoteLib = sp.io.import_script_from_url("file:contracts/lending_note.py")
+LoanNoteLib = sp.io.import_script_from_url("file:contracts/loan_note.py")
 FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2Lib.py")
 CollateralVaultLib = sp.io.import_script_from_url(
     "file:contracts/collateral_vault.py")
 
 
-class LoanCore(LendingNoteLib.LendingNote):
+class LoanCore(LoanNoteLib.LoanNote):
     def __init__(self, admin, metadata):
-        LendingNoteLib.LendingNote.__init__(self, admin, metadata)
+        LoanNoteLib.LoanNote.__init__(self, admin, metadata)
 
         self.update_initial_storage(**self.get_initial_storage())
 
@@ -117,7 +117,7 @@ class LoanCore(LendingNoteLib.LendingNote):
 
     def issue_lending_note(self, lender):
         sp.set_type(lender, sp.TAddress)
-        self.mint([LendingNoteLib.MintArg.make(lender)])
+        self.mint([LoanNoteLib.MintArg.make(lender)])
 
     def transfer_funds(self, _from, _to, _currency, _tokenId, _amount):
         sp.set_type(_from, sp.TAddress)
