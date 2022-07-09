@@ -2,15 +2,16 @@
 import smartpy as sp
 
 Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
+CommonLib = sp.io.import_script_from_url("file:contracts/lib/CommonLib.py")
 LoanNoteLib = sp.io.import_script_from_url("file:contracts/loan_note.py")
 FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2Lib.py")
 CollateralVaultLib = sp.io.import_script_from_url(
     "file:contracts/collateral_vault.py")
 
 
-class LoanCore(LoanNoteLib.LoanNote):
-    def __init__(self, admin, metadata):
-        LoanNoteLib.LoanNote.__init__(self, admin, metadata)
+class LoanCore(CommonLib.Ownable):
+    def __init__(self, owner):
+        CommonLib.Ownable.__init__(self, owner)
 
         self.update_initial_storage(**self.get_initial_storage())
 
@@ -80,7 +81,7 @@ class LoanCore(LoanNoteLib.LoanNote):
                             )
 
         # Issue a transferable lending note to the lender.
-        self.issue_lending_note(lender)
+        # self.issue_lending_note(lender)
 
         # Emits an event
 
@@ -95,7 +96,7 @@ class LoanCore(LoanNoteLib.LoanNote):
     @sp.entry_point
     def set_processing_fee(self, new_processing_fee):
         sp.set_type(new_processing_fee, sp.TNat)
-        sp.verify(self.is_administrator(sp.sender), "NOT_ADMIN")
+        self._onlyOwner()
         sp.verify(new_processing_fee < 250, "INVALID_FEE")
 
         self.data.processing_fee = new_processing_fee
@@ -105,19 +106,19 @@ class LoanCore(LoanNoteLib.LoanNote):
         sp.set_type(currency, sp.TAddress)
         sp.set_type(precision, sp.TNat)
 
-        sp.verify(self.is_administrator(sp.sender), "NOT_ADMIN")
+        self._onlyOwner()
         self.data.permitted_currencies[currency] = True
         self.data.currency_precision[currency] = precision
 
     @sp.entry_point
     def set_collateral_vault(self, collateral_vault_address):
         sp.set_type(collateral_vault_address, sp.TAddress)
-        sp.verify(self.is_administrator(sp.sender), "NOT_ADMIN")
+        self._onlyOwner()
         self.data.collateral_vault_address = collateral_vault_address
 
-    def issue_lending_note(self, lender):
-        sp.set_type(lender, sp.TAddress)
-        self.mint([LoanNoteLib.MintArg.make(lender)])
+    # def issue_lending_note(self, lender):
+    #     sp.set_type(lender, sp.TAddress)
+    #     self.mint([LoanNoteLib.MintArg.make(lender)])
 
     def transfer_funds(self, _from, _to, _currency, _tokenId, _amount):
         sp.set_type(_from, sp.TAddress)
@@ -162,8 +163,5 @@ class LoanCore(LoanNoteLib.LoanNote):
 
 sp.add_compilation_target(
     "loan_core",
-    LoanCore(
-        admin=sp.address("tz1YtuZ4vhzzn7ssCt93Put8U9UJDdvCXci4"),
-        metadata=sp.utils.metadata_of_url("http://example.com")
-    )
+    LoanCore(owner=Constants.NULL_ADDRESS)
 )
