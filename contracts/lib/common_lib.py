@@ -7,7 +7,7 @@ class Ownable(sp.Contract):
     def __init__(self, owner: sp.TAddress) -> None:
         self.init(owner=owner)
 
-    def _onlyOwner(self):
+    def _only_owner(self):
         sp.verify(self.data.owner == sp.sender,
                   "Ownable: caller is not the owner")
 
@@ -15,7 +15,7 @@ class Ownable(sp.Contract):
         """
                         Set a new owner!
         """
-        self._onlyOwner()
+        self._only_owner()
         self.data.owner = address
 
     def _renounceOwnership(self):

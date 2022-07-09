@@ -2,7 +2,7 @@
 import smartpy as sp
 
 Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
-CommonLib = sp.io.import_script_from_url("file:contracts/lib/CommonLib.py")
+CommonLib = sp.io.import_script_from_url("file:contracts/lib/common_lib.py")
 LoanNoteLib = sp.io.import_script_from_url("file:contracts/loan_note.py")
 FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2Lib.py")
 CollateralVaultLib = sp.io.import_script_from_url(
@@ -47,9 +47,6 @@ class LoanCore(CommonLib.Ownable):
                                        self.data.collateral_vault_address,
                                        entry_point='deposit').open_some()
 
-        # payload = sp.record(asset_contract_address=asset_contract_address,
-        #                     asset_token_id=asset_token_id, recipient=sp.sender)
-
         payload = sp.record(depositor=borrower, collateral_contract=collateral_contract,
                             collateral_token_id=collateral_token_id, amount=1, deposit_id=1)
 
@@ -83,7 +80,7 @@ class LoanCore(CommonLib.Ownable):
         # Issue borrower and lender notes.
         self.issue_borrower_note(borrower, self.data.loan_id)
         self.issue_lender_note(lender, self.data.loan_id)
-        
+
         self._increment_loan_id()
 
         # Emits an event
@@ -99,7 +96,7 @@ class LoanCore(CommonLib.Ownable):
     @sp.entry_point
     def set_processing_fee(self, new_processing_fee):
         sp.set_type(new_processing_fee, sp.TNat)
-        self._onlyOwner()
+        self._only_owner()
         sp.verify(new_processing_fee < 250, "INVALID_FEE")
 
         self.data.processing_fee = new_processing_fee
@@ -109,14 +106,14 @@ class LoanCore(CommonLib.Ownable):
         sp.set_type(currency, sp.TAddress)
         sp.set_type(precision, sp.TNat)
 
-        self._onlyOwner()
+        self._only_owner()
         self.data.permitted_currencies[currency] = True
         self.data.currency_precision[currency] = precision
 
     @sp.entry_point
     def set_collateral_vault(self, collateral_vault_address):
         sp.set_type(collateral_vault_address, sp.TAddress)
-        self._onlyOwner()
+        self._only_owner()
         self.data.collateral_vault_address = collateral_vault_address
 
     @sp.entry_point
@@ -124,7 +121,7 @@ class LoanCore(CommonLib.Ownable):
         sp.set_type(lender_note_address, sp.TAddress)
         sp.set_type(borrower_note_address, sp.TAddress)
 
-        self._onlyOwner()
+        self._only_owner()
 
         # A sequence of further verifications are required here.
 
