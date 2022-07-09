@@ -5,10 +5,6 @@ CommonLib = sp.io.import_script_from_url("file:contracts/lib/CommonLib.py")
 FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2Lib.py")
 
 
-# class ErrorMessage:
-#     NOT_ADMIN = "{}NOT_ADMIN"
-
-
 class Deposit:
     def get_type():
         return sp.TRecord(
