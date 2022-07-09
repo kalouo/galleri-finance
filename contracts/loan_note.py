@@ -14,19 +14,33 @@ class LoanNote(FA2Lib.Admin,
                                ledger=ledger, policy=policy, metadata_base=metadata_base)
         FA2Lib.Admin.__init__(self, admin)
 
+    @sp.entry_point
     def mint(self, batch):
         """Tokens can only be minted through internal calls"""
-        sp.set_type(batch, MintArg.get_batch_type())
+        sp.set_type(batch, Mint.get_batch_type())
+        sp.verify(self.is_administrator(sp.sender), "FA2_NOT_ADMIN")
+
         with sp.for_("action", batch) as action:
-            token_id = sp.compute(self.data.last_token_id)
             metadata = sp.record(
-                token_id=token_id, token_info=action.metadata)
-            self.data.token_metadata[token_id] = metadata
-            self.data.ledger[token_id] = action.to_
+                token_id=action.token_id, token_info=action.metadata)
+            self.data.token_metadata[action.token_id] = metadata
+            self.data.ledger[action.token_id] = action.to
             self.data.last_token_id += 1
 
 
-class MintArg:
+class Mint:
+    def execute(token_address, token_id, to):
+        """Executes FA2 mint transaction
+        Args:
+            token_address (sp.address): FA2 token contract address
+            to (sp.address): recipient
+            token_id (sp.nat): token ID
+        """
+        mint_token_contract = sp.contract(Mint.get_batch_type(
+        ), token_address, entry_point='mint').open_some()
+        mint_payload = [Mint.make(token_id, to)]
+        sp.transfer(mint_payload, sp.mutez(0), mint_token_contract)
+
     """Helper type used for the `mint` function
     """
     def get_type():
@@ -35,21 +49,22 @@ class MintArg:
             sp.TRecord: [description]
         """
         return sp.TRecord(
-            to_=sp.TAddress,
+            token_id=sp.TNat,
+            to=sp.TAddress,
             metadata=sp.TMap(sp.TString, sp.TBytes),
-        ).layout(("to_", "metadata"))
+        ).layout(("token_id", ("to", "metadata")))
 
     def get_batch_type():
         """Get a list of the token amount type
         Returns:
             sp.TList: the token amount list type
         """
-        return sp.TList(MintArg.get_type())
+        return sp.TList(Mint.get_type())
 
     def make_metadata(symbol, name, decimals):
         return FA2Lib.make_metadata(symbol, name, decimals)
 
-    def make(to):
+    def make(token_id, to):
         """Creates a typed token amount
         Args:
             _to (sp.address): recipient
@@ -57,7 +72,7 @@ class MintArg:
             sp.record: arguments for `mint` function
         """
 
-        return sp.set_type_expr(sp.record(to_=to, metadata=MintArg.make_metadata("LN", "Lending LoanNote", 0)), MintArg.get_type())
+        return sp.set_type_expr(sp.record(to=to, token_id=token_id, metadata=Mint.make_metadata("LN", "Lending LoanNote", 0)), Mint.get_type())
 
 
 if __name__ == "__main__":

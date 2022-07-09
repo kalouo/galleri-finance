@@ -80,8 +80,9 @@ class LoanCore(CommonLib.Ownable):
                             net_loan_amount
                             )
 
-        # Issue a transferable lending note to the lender.
-        # self.issue_lending_note(lender)
+        # Issue borrower and lender notes.
+        self.issue_borrower_note(borrower)
+        self.issue_lender_note(lender)
 
         # Emits an event
 
@@ -128,9 +129,13 @@ class LoanCore(CommonLib.Ownable):
         self.data.lender_note_address = lender_note_address
         self.data.borrower_note_address = borrower_note_address
 
-    # def issue_lending_note(self, lender):
-    #     sp.set_type(lender, sp.TAddress)
-    #     self.mint([LoanNoteLib.MintArg.make(lender)])
+    def issue_borrower_note(self, borrower):
+        sp.set_type(borrower, sp.TAddress)
+        LoanNoteLib.Mint.execute(self.data.borrower_note_address, 0, borrower)
+
+    def issue_lender_note(self, lender):
+        sp.set_type(lender, sp.TAddress)
+        LoanNoteLib.Mint.execute(self.data.lender_note_address, 0, lender)
 
     def transfer_funds(self, _from, _to, _currency, _tokenId, _amount):
         sp.set_type(_from, sp.TAddress)

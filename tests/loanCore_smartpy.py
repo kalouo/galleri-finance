@@ -138,8 +138,11 @@ def test():
                                     collateral_token_id=0
                                     )
 
-    # Verify that Bob owns the lending note.
-    # scenario.verify(loanCore.data.ledger[0] == _bob.address)
+    # Verify that Bob owns the lender note.
+    scenario.verify(lenderNote.data.ledger[0] == _bob.address)
+
+    #Verify that Bob owns the borrower note.
+    scenario.verify(borrowerNote.data.ledger[0] == _alice.address)
 
     # Verify the NFT is locked in the collateral vaut.
     scenario.verify(nonFungibleToken.data.ledger[0] == collateralVault.address)
