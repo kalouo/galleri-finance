@@ -13,7 +13,7 @@ class LoanCore(CommonLib.Ownable):
     def __init__(self, owner):
         CommonLib.Ownable.__init__(self, owner)
 
-        self.update_initial_storage(**self.get_initial_storage())
+        self.update_initial_storage(**self._get_initial_storage())
 
     @sp.entry_point
     def start_loan(
@@ -37,31 +37,28 @@ class LoanCore(CommonLib.Ownable):
         # Verify that the call is coming from the origination controller.
 
         # Verify that the currency is permitted
-        self.verify_permitted_currency(loan_denomination_contract)
+        self._verify_permitted_currency(loan_denomination_contract)
 
         # Write loan to contract storage.
 
         # Transfer collateral to the collateral vault.
-
-        collateral_vault = sp.contract(CollateralVaultLib.Deposit.get_type(),
-                                       self.data.collateral_vault_address,
-                                       entry_point='deposit').open_some()
-
-        payload = sp.record(depositor=borrower, collateral_contract=collateral_contract,
-                            collateral_token_id=collateral_token_id, amount=1, deposit_id=1)
-
-        sp.transfer(payload, sp.mutez(0), collateral_vault)
+        self._transfer_collateral_to_vault(
+            borrower,
+            collateral_contract,
+            collateral_token_id,
+            self.data.loan_id
+        )
 
         # Transfer loan amount to the contract
-        self.transfer_funds(lender,
-                            sp.self_address,
-                            loan_denomination_contract,
-                            loan_denomination_id,
-                            loan_principal_amount
-                            )
+        self._transfer_funds(lender,
+                             sp.self_address,
+                             loan_denomination_contract,
+                             loan_denomination_id,
+                             loan_principal_amount
+                             )
 
         # Calculate the processing fee.
-        processing_fee = self.compute_processing_fee(
+        processing_fee = self._compute_processing_fee(
             loan_principal_amount,
             self.data.currency_precision[loan_denomination_contract]
         )
@@ -70,16 +67,16 @@ class LoanCore(CommonLib.Ownable):
         net_loan_amount = sp.as_nat(loan_principal_amount - processing_fee)
 
         # Transfer net loan amount to the borrower.
-        self.transfer_funds(sp.self_address,
-                            borrower,
-                            loan_denomination_contract,
-                            loan_denomination_id,
-                            net_loan_amount
-                            )
+        self._transfer_funds(sp.self_address,
+                             borrower,
+                             loan_denomination_contract,
+                             loan_denomination_id,
+                             net_loan_amount
+                             )
 
         # Issue borrower and lender notes.
-        self.issue_borrower_note(borrower, self.data.loan_id)
-        self.issue_lender_note(lender, self.data.loan_id)
+        self._issue_borrower_note(borrower, self.data.loan_id)
+        self._issue_lender_note(lender, self.data.loan_id)
 
         self._increment_loan_id()
 
@@ -128,17 +125,17 @@ class LoanCore(CommonLib.Ownable):
         self.data.lender_note_address = lender_note_address
         self.data.borrower_note_address = borrower_note_address
 
-    def issue_borrower_note(self, borrower, loan_id):
+    def _issue_borrower_note(self, borrower, loan_id):
         sp.set_type(borrower, sp.TAddress)
         LoanNoteLib.Mint.execute(
             self.data.borrower_note_address, loan_id, borrower)
 
-    def issue_lender_note(self, lender, loan_id):
+    def _issue_lender_note(self, lender, loan_id):
         sp.set_type(lender, sp.TAddress)
         LoanNoteLib.Mint.execute(
             self.data.lender_note_address, loan_id, lender)
 
-    def transfer_funds(self, _from, _to, _currency, _tokenId, _amount):
+    def _transfer_funds(self, _from, _to, _currency, _tokenId, _amount):
         sp.set_type(_from, sp.TAddress)
         sp.set_type(_to, sp.TAddress)
         sp.set_type(_currency, sp.TAddress)
@@ -147,23 +144,33 @@ class LoanCore(CommonLib.Ownable):
 
         FA2Lib.Transfer.execute(_currency, _from, _to, _tokenId, _amount)
 
-    def verify_permitted_currency(self, currency):
+    def _verify_permitted_currency(self, currency):
         sp.verify(self.data.permitted_currencies.contains(
             currency) == True, "CURRENCY_NOT_AUTHORIZED")
 
-    def compute_processing_fee(self, loan_amount, currency_precision):
+    def _compute_processing_fee(self, loan_amount, currency_precision):
         sp.set_type(loan_amount, sp.TNat)
         sp.set_type(currency_precision, sp.TNat)
 
-        return self.apply_percentage(loan_amount, self.data.processing_fee, currency_precision)
+        return self._apply_percentage(loan_amount, self.data.processing_fee, currency_precision)
 
-    def apply_percentage(self, base_amount, basis_points, precision):
+    def _apply_percentage(self, base_amount, basis_points, precision):
         sp.set_type(base_amount, sp.TNat)
         sp.set_type(basis_points, sp.TNat)
         sp.set_type(precision, sp.TNat)
 
         multiplier = (basis_points * precision) / Constants.BASIS_POINT_DIVISOR
         return ((base_amount * multiplier) // precision)
+
+    def _transfer_collateral_to_vault(self, borrower, collateral_contract, collateral_id, loan_id):
+        collateral_vault = sp.contract(CollateralVaultLib.Deposit.get_type(),
+                                       self.data.collateral_vault_address,
+                                       entry_point='deposit').open_some()
+
+        payload = sp.record(depositor=borrower, collateral_contract=collateral_contract,
+                            collateral_token_id=collateral_id, amount=1, deposit_id=loan_id)
+
+        sp.transfer(payload, sp.mutez(0), collateral_vault)
 
     def _increment_loan_id(self):
         self.data.loan_id += 1
