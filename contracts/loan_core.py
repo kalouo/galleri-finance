@@ -1,17 +1,22 @@
 # SmartPy Code
 import smartpy as sp
 
-Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
-CommonLib = sp.io.import_script_from_url("file:contracts/lib/common_lib.py")
-LoanNoteLib = sp.io.import_script_from_url("file:contracts/loan_note.py")
-FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2_lib.py")
-CollateralVaultLib = sp.io.import_script_from_url(
-    "file:contracts/collateral_vault.py")
+
+def import_sp(file_path):
+    return sp.io.import_script_from_url("file:" + file_path)
 
 
-class LoanCore(CommonLib.Ownable):
+Constants = import_sp("contracts/lib/constants.py")
+
+LibFA2 = import_sp("contracts/lib/FA2_lib.py")
+LibCommon = import_sp("contracts/lib/common_lib.py")
+LibLoanNote = import_sp("contracts/loan_note.py")
+LibCollateralVault = import_sp("contracts/collateral_vault.py")
+
+
+class LoanCore(LibCommon.Ownable):
     def __init__(self, owner):
-        CommonLib.Ownable.__init__(self, owner)
+        LibCommon.Ownable.__init__(self, owner)
 
         self.update_initial_storage(**self._get_initial_storage())
 
@@ -145,12 +150,12 @@ class LoanCore(CommonLib.Ownable):
 
     def _issue_borrower_note(self, borrower, loan_id):
         sp.set_type(borrower, sp.TAddress)
-        LoanNoteLib.Mint.execute(
+        LibLoanNote.Mint.execute(
             self.data.borrower_note_address, loan_id, borrower)
 
     def _issue_lender_note(self, lender, loan_id):
         sp.set_type(lender, sp.TAddress)
-        LoanNoteLib.Mint.execute(
+        LibLoanNote.Mint.execute(
             self.data.lender_note_address, loan_id, lender)
 
     def _transfer_funds(self, _from, _to, _currency, _tokenId, _amount):
@@ -160,7 +165,7 @@ class LoanCore(CommonLib.Ownable):
         sp.set_type(_amount, sp.TNat)
         sp.set_type(_tokenId, sp.TNat)
 
-        FA2Lib.Transfer.execute(_currency, _from, _to, _tokenId, _amount)
+        LibFA2.Transfer.execute(_currency, _from, _to, _tokenId, _amount)
 
     def _verify_permitted_currency(self, currency):
         sp.verify(self.data.permitted_currencies.contains(
@@ -181,7 +186,7 @@ class LoanCore(CommonLib.Ownable):
         return ((base_amount * multiplier) // precision)
 
     def _transfer_collateral_to_vault(self, borrower, collateral_contract, collateral_id, loan_id):
-        collateral_vault = sp.contract(CollateralVaultLib.Deposit.get_type(),
+        collateral_vault = sp.contract(LibCollateralVault.Deposit.get_type(),
                                        self.data.collateral_vault_address,
                                        entry_point='deposit').open_some()
 
