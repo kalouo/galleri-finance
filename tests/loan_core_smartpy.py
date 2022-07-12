@@ -136,10 +136,21 @@ def test():
                                     loan_denomination_id=0,
                                     loan_principal_amount=loanAmount,
                                     collateral_contract=nonFungibleToken.address,
-                                    collateral_token_id=0
+                                    collateral_token_id=0,
+                                    loan_duration=0
                                     )
 
-    # Verify that Bob owns the lender note.
+    scenario.verify(loanCore.get_loan_by_id(0) == sp.record(
+                    lender=_bob.address,
+                    borrower=_alice.address,
+                    loan_denomination_contract=fungibleToken.address,
+                    loan_denomination_id=0,
+                    loan_principal_amount=loanAmount,
+                    collateral_contract=nonFungibleToken.address,
+                    collateral_token_id=0,
+                    loan_duration=0))
+
+    # # Verify that Bob owns the lender note.
     scenario.verify(lenderNote.data.ledger[0] == _bob.address)
 
     # Verify that Bob owns the borrower note.

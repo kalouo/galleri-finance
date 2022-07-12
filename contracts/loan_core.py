@@ -25,7 +25,7 @@ class LoanCore(CommonLib.Ownable):
         loan_principal_amount,
         collateral_contract,
         collateral_token_id,
-        # _loan_duration,
+        loan_duration,
     ):
         # Type checks.
         sp.set_type(lender, sp.TAddress)
@@ -33,6 +33,9 @@ class LoanCore(CommonLib.Ownable):
         sp.set_type(loan_denomination_contract, sp.TAddress)
         sp.set_type(loan_principal_amount, sp.TNat)
         sp.set_type(loan_denomination_id, sp.TNat)
+        sp.set_type(collateral_contract, sp.TAddress)
+        sp.set_type(collateral_token_id, sp.TNat)
+        sp.set_type(loan_duration, sp.TNat)
 
         # Verify that the call is coming from the origination controller.
 
@@ -40,6 +43,16 @@ class LoanCore(CommonLib.Ownable):
         self._verify_permitted_currency(loan_denomination_contract)
 
         # Write loan to contract storage.
+        self.data.loans_by_id[self.data.loan_id] = sp.record(
+            lender=lender,
+            borrower=borrower,
+            loan_denomination_contract=loan_denomination_contract,
+            loan_denomination_id=loan_denomination_id,
+            loan_principal_amount=loan_principal_amount,
+            collateral_contract=collateral_contract,
+            collateral_token_id=collateral_token_id,
+            loan_duration=loan_duration
+        )
 
         # Transfer collateral to the collateral vault.
         self._transfer_collateral_to_vault(
@@ -125,6 +138,11 @@ class LoanCore(CommonLib.Ownable):
         self.data.lender_note_address = lender_note_address
         self.data.borrower_note_address = borrower_note_address
 
+    @sp.onchain_view()
+    def get_loan_by_id(self, loan_id):
+        sp.set_type(loan_id, sp.TNat)
+        sp.result(self.data.loans_by_id[loan_id])
+
     def _issue_borrower_note(self, borrower, loan_id):
         sp.set_type(borrower, sp.TAddress)
         LoanNoteLib.Mint.execute(
@@ -175,10 +193,23 @@ class LoanCore(CommonLib.Ownable):
     def _increment_loan_id(self):
         self.data.loan_id += 1
 
-    def get_initial_storage(self):
+    def _get_initial_storage(self):
         storage = {}
         storage["loan_id"] = sp.nat(0)
         storage['processing_fee'] = sp.nat(0)
+
+        t_loan = sp.TRecord(
+            lender=sp.TAddress,
+            borrower=sp.TAddress,
+            loan_denomination_contract=sp.TAddress,
+            loan_denomination_id=sp.TNat,
+            loan_principal_amount=sp.TNat,
+            collateral_contract=sp.TAddress,
+            collateral_token_id=sp.TNat,
+            loan_duration=sp.TNat
+        )
+
+        storage["loans_by_id"] = sp.big_map(tkey=sp.TNat, tvalue=t_loan)
 
         storage["collateral_vault_address"] = Constants.NULL_ADDRESS
         storage["borrower_note_address"] = Constants.NULL_ADDRESS
