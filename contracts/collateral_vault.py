@@ -16,6 +16,14 @@ class Deposit:
         )
 
 
+class Withdraw:
+    def get_type():
+        return sp.TRecord(
+            recipient=sp.TAddress,
+            deposit_id=sp.TNat,
+        )
+
+
 class CollateralVault(CommonLib.Ownable):
     def __init__(self, owner):
         CommonLib.Ownable.__init__(self, owner)
@@ -55,6 +63,26 @@ class CollateralVault(CommonLib.Ownable):
             collateral_token_id=collateral_token_id,
             deposit_amount=amount
         )
+
+    @sp.entry_point
+    def withdraw(self, deposit_id, recipient):
+        sp.set_type(recipient, sp.TAddress)
+        sp.set_type(deposit_id, sp.TNat)
+
+        self._only_owner()
+
+        sp.verify(self.data.deposits.contains(deposit_id))
+        deposit = self.data.deposits[deposit_id]
+
+        self._transfer_collateral(
+            sp.self_address,
+            recipient,
+            deposit.collateral_contract,
+            deposit.collateral_token_id,
+            deposit.deposit_amount
+        )
+
+        del self.data.deposits[deposit_id]
 
     def _transfer_collateral(self, _from, _to, _currency, _tokenId, _amount):
         sp.set_type(_from, sp.TAddress)

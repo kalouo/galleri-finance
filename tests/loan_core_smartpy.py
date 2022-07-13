@@ -133,12 +133,12 @@ def test():
     scenario += loanCore.start_loan(lender=_bob.address,
                                     borrower=_alice.address,
                                     loan_denomination_contract=fungibleToken.address,
-                                    loan_denomination_id=0,
+                                    loan_denomination_id=sp.nat(0),
                                     loan_principal_amount=loanAmount,
                                     collateral_contract=nonFungibleToken.address,
-                                    collateral_token_id=0,
-                                    loan_duration=0
-                                    )
+                                    collateral_token_id=sp.nat(0),
+                                    loan_duration=sp.int(3600)
+                                    ).run(now=sp.timestamp(0))
 
     scenario.verify(loanCore.get_loan_by_id(0) == sp.record(
                     lender=_bob.address,
@@ -148,7 +148,8 @@ def test():
                     loan_principal_amount=loanAmount,
                     collateral_contract=nonFungibleToken.address,
                     collateral_token_id=0,
-                    loan_duration=0))
+                    loan_origination_timestamp=sp.timestamp(0),
+                    loan_duration=sp.int(3600)))
 
     # # Verify that Bob owns the lender note.
     scenario.verify(lenderNote.data.ledger[0] == _bob.address)
@@ -166,3 +167,17 @@ def test():
 
     scenario.verify(fungibleToken.data.ledger[sp.pair(
         _alice.address, 0)] == sp.nat(1099) * PRECISION)
+
+    scenario += loanCore.claim(1).run(sender=_bob.address,
+                                      valid=False, exception='NON-EXISTENT LOAN')
+
+    scenario += loanCore.claim(0).run(sender=_alice.address,
+                                      valid=False, exception='UNAUTHORIZED CALLER')
+
+    scenario += loanCore.claim(0).run(sender=_bob.address,
+                                      now=sp.timestamp(3599), valid=False, exception="NOT_EXPIRED")
+
+    scenario += loanCore.claim(0).run(sender=_bob.address,
+                                      now=sp.timestamp(3601))
+
+    scenario.verify(nonFungibleToken.data.ledger[0] == _bob.address)

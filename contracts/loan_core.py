@@ -40,7 +40,7 @@ class LoanCore(LibCommon.Ownable):
         sp.set_type(loan_denomination_id, sp.TNat)
         sp.set_type(collateral_contract, sp.TAddress)
         sp.set_type(collateral_token_id, sp.TNat)
-        sp.set_type(loan_duration, sp.TNat)
+        sp.set_type(loan_duration, sp.TInt)
 
         # Verify that the call is coming from the origination controller.
 
@@ -56,6 +56,7 @@ class LoanCore(LibCommon.Ownable):
             loan_principal_amount=loan_principal_amount,
             collateral_contract=collateral_contract,
             collateral_token_id=collateral_token_id,
+            loan_origination_timestamp=sp.now,
             loan_duration=loan_duration
         )
 
@@ -105,8 +106,19 @@ class LoanCore(LibCommon.Ownable):
         None
 
     @sp.entry_point
-    def claim(self):
-        None
+    def claim(self, loan_id):
+        sp.set_type(loan_id, sp.TNat)
+        sp.verify(self.data.loans_by_id.contains(loan_id), "NON-EXISTENT LOAN")
+
+        loan = self.data.loans_by_id[loan_id]
+        sp.verify(sp.sender == loan.lender, "UNAUTHORIZED CALLER")
+
+        sp.verify(sp.now > loan.loan_origination_timestamp.add_seconds(
+            loan.loan_duration), "NOT_EXPIRED")
+
+        self._withdraw_collateral_from_vault(loan_id, loan.lender)
+
+        del self.data.loans_by_id[loan_id]
 
     @sp.entry_point
     def set_processing_fee(self, new_processing_fee):
@@ -195,6 +207,15 @@ class LoanCore(LibCommon.Ownable):
 
         sp.transfer(payload, sp.mutez(0), collateral_vault)
 
+    def _withdraw_collateral_from_vault(self, deposit_id, recipient):
+        collateral_vault = sp.contract(LibCollateralVault.Withdraw.get_type(),
+                                       self.data.collateral_vault_address,
+                                       entry_point='withdraw').open_some()
+
+        payload = sp.record(deposit_id=deposit_id, recipient=recipient)
+
+        sp.transfer(payload, sp.mutez(0), collateral_vault)
+
     def _increment_loan_id(self):
         self.data.loan_id += 1
 
@@ -211,7 +232,8 @@ class LoanCore(LibCommon.Ownable):
             loan_principal_amount=sp.TNat,
             collateral_contract=sp.TAddress,
             collateral_token_id=sp.TNat,
-            loan_duration=sp.TNat
+            loan_origination_timestamp=sp.TTimestamp,
+            loan_duration=sp.TInt
         )
 
         storage["loans_by_id"] = sp.big_map(tkey=sp.TNat, tvalue=t_loan)
