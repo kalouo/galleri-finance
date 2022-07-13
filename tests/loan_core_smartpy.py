@@ -185,16 +185,15 @@ def test():
     scenario += loanCore.repay(0).run(sender=_bob.address,
                                       valid=False, exception='UNAUTHORIZED CALLER')
 
-
     scenario += loanCore.repay(0).run(sender=_alice.address,
                                       now=sp.timestamp(3601), valid=False, exception="EXPIRED")
 
-
     scenario += loanCore.repay(0).run(sender=_alice.address,
-                                      now=sp.timestamp(3599))
+                                      now=sp.timestamp(3599), valid=True)
 
     scenario.verify(nonFungibleToken.data.ledger[0] == _alice.address)
-
+    scenario.verify(borrowerNote.data.ledger.contains(0) == False)
+    scenario.verify(lenderNote.data.ledger.contains(0) == False)
 
     # scenario += loanCore.claim(1).run(sender=_bob.address,
     #                                   valid=False, exception='NON-EXISTENT LOAN')

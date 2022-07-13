@@ -109,18 +109,32 @@ class LoanCore(LibCommon.Ownable):
             loan_id), "NON-EXISTENT LOAN")
 
         loan = self.data.loans_by_id[loan_id]
+
+        lender = sp.view("owner_of",
+                         self.data.lender_note_address,
+                         loan_id,
+                         t=sp.TAddress).open_some()
+
+        borrower = sp.view("owner_of",
+                           self.data.borrower_note_address,
+                           loan_id,
+                           t=sp.TAddress).open_some()
+
         sp.verify(sp.sender == loan.borrower, "UNAUTHORIZED CALLER")
 
         sp.verify(sp.now <= loan.loan_origination_timestamp.add_seconds(
             loan.loan_duration), "EXPIRED")
 
-        self._transfer_funds(loan.borrower,
-                             loan.lender,
+        self._transfer_funds(borrower,
+                             lender,
                              loan.loan_denomination_contract,
                              loan.loan_denomination_id,
                              loan.loan_principal_amount
                              )
         self._withdraw_collateral_from_vault(loan_id, loan.borrower)
+
+        self._burn_borrower_note(loan_id)
+        self._burn_lender_note(loan_id)
 
         del self.data.loans_by_id[loan_id]
 
@@ -130,12 +144,21 @@ class LoanCore(LibCommon.Ownable):
         sp.verify(self.data.loans_by_id.contains(loan_id), "NON-EXISTENT LOAN")
 
         loan = self.data.loans_by_id[loan_id]
-        sp.verify(sp.sender == loan.lender, "UNAUTHORIZED CALLER")
+
+        lender = sp.view("owner_of",
+                         self.data.lender_note_address,
+                         loan_id,
+                         t=sp.TAddress).open_some()
+
+        sp.verify(sp.sender == lender, "UNAUTHORIZED CALLER")
 
         sp.verify(sp.now > loan.loan_origination_timestamp.add_seconds(
             loan.loan_duration), "NOT_EXPIRED")
 
         self._withdraw_collateral_from_vault(loan_id, loan.lender)
+
+        self._burn_borrower_note(loan_id)
+        self._burn_lender_note(loan_id)
 
         del self.data.loans_by_id[loan_id]
 
@@ -184,10 +207,18 @@ class LoanCore(LibCommon.Ownable):
         LibLoanNote.Mint.execute(
             self.data.borrower_note_address, loan_id, borrower)
 
+    def _burn_borrower_note(self, loan_id):
+        sp.set_type(loan_id, sp.TNat)
+        LibLoanNote.Burn.execute(self.data.borrower_note_address, loan_id)
+
     def _issue_lender_note(self, lender, loan_id):
         sp.set_type(lender, sp.TAddress)
         LibLoanNote.Mint.execute(
             self.data.lender_note_address, loan_id, lender)
+
+    def _burn_lender_note(self, loan_id):
+        sp.set_type(loan_id, sp.TNat)
+        LibLoanNote.Burn.execute(self.data.lender_note_address, loan_id)
 
     def _transfer_funds(self, _from, _to, _currency, _tokenId, _amount):
         sp.set_type(_from, sp.TAddress)
