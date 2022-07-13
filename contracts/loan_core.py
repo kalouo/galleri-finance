@@ -102,8 +102,27 @@ class LoanCore(LibCommon.Ownable):
         # Emits an event
 
     @sp.entry_point
-    def repay(self):
-        None
+    def repay(self, loan_id):
+        sp.set_type(loan_id, sp.TNat)
+
+        sp.verify(self.data.loans_by_id.contains(
+            loan_id), "NON-EXISTENT LOAN")
+
+        loan = self.data.loans_by_id[loan_id]
+        sp.verify(sp.sender == loan.borrower, "UNAUTHORIZED CALLER")
+
+        sp.verify(sp.now <= loan.loan_origination_timestamp.add_seconds(
+            loan.loan_duration), "EXPIRED")
+
+        self._transfer_funds(loan.borrower,
+                             loan.lender,
+                             loan.loan_denomination_contract,
+                             loan.loan_denomination_id,
+                             loan.loan_principal_amount
+                             )
+        self._withdraw_collateral_from_vault(loan_id, loan.borrower)
+
+        del self.data.loans_by_id[loan_id]
 
     @sp.entry_point
     def claim(self, loan_id):
