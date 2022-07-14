@@ -139,7 +139,8 @@ def test():
                                     maximum_interest_amount=interest_amount,
                                     collateral_contract=nonFungibleToken.address,
                                     collateral_token_id=sp.nat(0),
-                                    loan_duration=sp.int(3600)
+                                    loan_duration=sp.int(3600), 
+                                    time_adjustable_interest=False
                                     ).run(now=sp.timestamp(0))
 
     scenario.verify(loanCore.get_loan_by_id(0) == sp.record(
@@ -150,7 +151,8 @@ def test():
                     collateral_contract=nonFungibleToken.address,
                     collateral_token_id=0,
                     loan_origination_timestamp=sp.timestamp(0),
-                    loan_duration=sp.int(3600)))
+                    loan_duration=sp.int(3600), 
+                    time_adjustable_interest=False))
 
     # # Verify that Bob owns the lender note.
     scenario.verify(lenderNote.data.ledger[0] == _bob.address)

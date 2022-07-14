@@ -32,6 +32,7 @@ class LoanCore(LibCommon.Ownable):
         collateral_contract,
         collateral_token_id,
         loan_duration,
+        time_adjustable_interest
     ):
         # Type checks.
         sp.set_type(lender, sp.TAddress)
@@ -43,6 +44,8 @@ class LoanCore(LibCommon.Ownable):
         sp.set_type(collateral_contract, sp.TAddress)
         sp.set_type(collateral_token_id, sp.TNat)
         sp.set_type(loan_duration, sp.TInt)
+        sp.set_type(time_adjustable_interest, sp.TBool)
+
 
         # Verify that the call is coming from the origination controller.
 
@@ -58,7 +61,8 @@ class LoanCore(LibCommon.Ownable):
             loan_duration=loan_duration,
             loan_origination_timestamp=sp.now,
             loan_principal_amount=loan_principal_amount,
-            maximum_interest_amount=maximum_interest_amount
+            maximum_interest_amount=maximum_interest_amount,
+            time_adjustable_interest=time_adjustable_interest
         )
 
         # Transfer collateral to the collateral vault.
@@ -283,7 +287,8 @@ class LoanCore(LibCommon.Ownable):
             loan_duration=sp.TInt,
             loan_origination_timestamp=sp.TTimestamp,
             loan_principal_amount=sp.TNat,
-            maximum_interest_amount=sp.TNat
+            maximum_interest_amount=sp.TNat,
+            time_adjustable_interest=sp.TBool
         )
 
         storage["loans_by_id"] = sp.big_map(tkey=sp.TNat, tvalue=t_loan)
