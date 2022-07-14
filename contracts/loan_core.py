@@ -129,11 +129,14 @@ class LoanCore(LibCommon.Ownable):
         sp.verify(sp.now <= loan.loan_origination_timestamp.add_seconds(
             loan.loan_duration), "EXPIRED")
 
-        interest_due = self._compute_interest_rate(loan.maximum_interest_amount,
-                                                   self.data.currency_precision[loan.loan_denomination_contract],
-                                                   loan.loan_duration,
-                                                   loan.loan_origination_timestamp,
-                                                   loan.time_adjustable_interest)
+        params = sp.record(
+            maximum_interest_amount=loan.maximum_interest_amount,
+            currency_precision=self.data.currency_precision[loan.loan_denomination_contract],
+            loan_duration=loan.loan_duration,
+            loan_origination_timestamp=loan.loan_origination_timestamp,
+            time_adjustable_interest=loan.time_adjustable_interest
+        )
+        interest_due = self._compute_interest_rate(params)
 
         interest_fee = self._compute_interest_fee(interest_due,
                                                   self.data.currency_precision[loan.loan_denomination_contract]
@@ -142,7 +145,6 @@ class LoanCore(LibCommon.Ownable):
         sp.set_type(interest_fee, sp.TNat)
         sp.set_type(interest_due, sp.TNat)
         sp.set_type(loan.loan_principal_amount, sp.TNat)
-
 
         self._transfer_funds(borrower,
                              sp.self_address,
@@ -155,7 +157,8 @@ class LoanCore(LibCommon.Ownable):
                              lender,
                              loan.loan_denomination_contract,
                              loan.loan_denomination_id,
-                             sp.as_nat(loan.loan_principal_amount + interest_due - interest_fee)
+                             sp.as_nat(loan.loan_principal_amount +
+                                       interest_due - interest_fee)
                              )
 
         self._withdraw_collateral_from_vault(loan_id, borrower)
@@ -268,17 +271,21 @@ class LoanCore(LibCommon.Ownable):
         sp.verify(self.data.permitted_currencies.contains(
             currency) == True, "CURRENCY_NOT_AUTHORIZED")
 
-    def _compute_interest_rate(self, maximum_repayment_amount, currency_precision, loan_duration, loan_origination_timestamp, time_adjustable_interest):
-        sp.if time_adjustable_interest == True:
-            elapsed_seconds = sp.now - loan_origination_timestamp
+    @sp.private_lambda()
+    def _compute_interest_rate(self, params):
+
+        with sp.if_(params.time_adjustable_interest == True):
+            elapsed_seconds = sp.now - params.loan_origination_timestamp
 
             basis_points = (sp.as_nat(elapsed_seconds) *
-                            Constants.BASIS_POINT_DIVISOR) / sp.as_nat(loan_duration)
-            return self._apply_percentage(maximum_repayment_amount, basis_points, currency_precision)
+                            Constants.BASIS_POINT_DIVISOR) / sp.as_nat(params.loan_duration)
+            sp.result(self._apply_percentage(
+                params.maximum_interest_amount, basis_points, params.currency_precision))
 
-        sp.else:
-            return maximum_repayment_amount
+        with sp.else_():
+            sp.result(params.maximum_interest_amount)
 
+    
     def _compute_processing_fee(self, loan_amount, currency_precision):
         sp.set_type(loan_amount, sp.TNat)
         sp.set_type(currency_precision, sp.TNat)
