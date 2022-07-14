@@ -143,7 +143,6 @@ class LoanCore(LibCommon.Ownable):
         sp.set_type(interest_due, sp.TNat)
         sp.set_type(loan.loan_principal_amount, sp.TNat)
 
-
         self._transfer_funds(borrower,
                              sp.self_address,
                              loan.loan_denomination_contract,
@@ -155,7 +154,8 @@ class LoanCore(LibCommon.Ownable):
                              lender,
                              loan.loan_denomination_contract,
                              loan.loan_denomination_id,
-                             sp.as_nat(loan.loan_principal_amount + interest_due - interest_fee)
+                             sp.as_nat(loan.loan_principal_amount +
+                                       interest_due - interest_fee)
                              )
 
         self._withdraw_collateral_from_vault(loan_id, borrower)
@@ -269,14 +269,16 @@ class LoanCore(LibCommon.Ownable):
             currency) == True, "CURRENCY_NOT_AUTHORIZED")
 
     def _compute_interest_rate(self, maximum_repayment_amount, currency_precision, loan_duration, loan_origination_timestamp, time_adjustable_interest):
-        sp.if time_adjustable_interest == True:
+        with sp.if_(time_adjustable_interest == True):
             elapsed_seconds = sp.now - loan_origination_timestamp
 
             basis_points = (sp.as_nat(elapsed_seconds) *
                             Constants.BASIS_POINT_DIVISOR) / sp.as_nat(loan_duration)
-            return self._apply_percentage(maximum_repayment_amount, basis_points, currency_precision)
-        sp.else:
-            return maximum_repayment_amount
+            sp.result(self._apply_percentage(
+                maximum_repayment_amount, basis_points, currency_precision))
+
+        with sp.else_():
+            sp.result(maximum_repayment_amount)
 
     def _compute_processing_fee(self, loan_amount, currency_precision):
         sp.set_type(loan_amount, sp.TNat)
