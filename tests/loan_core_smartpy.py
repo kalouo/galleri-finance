@@ -50,6 +50,9 @@ def test():
     scenario += loanCore.set_processing_fee(100).run(sender=_admin)
     scenario.verify(loanCore.data.processing_fee == sp.nat(100))
 
+    scenario += loanCore.set_interest_fee(1000).run(sender=_admin)
+    scenario.verify(loanCore.data.interest_fee == sp.nat(1000))
+
     scenario += loanCore.set_collateral_vault(
         collateralVault.address).run(sender=_admin)
 
@@ -139,8 +142,8 @@ def test():
                                     maximum_interest_amount=interest_amount,
                                     collateral_contract=nonFungibleToken.address,
                                     collateral_token_id=sp.nat(0),
-                                    loan_duration=sp.int(3600), 
-                                    time_adjustable_interest=False
+                                    loan_duration=sp.int(3600),
+                                    time_adjustable_interest=True
                                     ).run(now=sp.timestamp(0))
 
     scenario.verify(loanCore.get_loan_by_id(0) == sp.record(
@@ -151,8 +154,8 @@ def test():
                     collateral_contract=nonFungibleToken.address,
                     collateral_token_id=0,
                     loan_origination_timestamp=sp.timestamp(0),
-                    loan_duration=sp.int(3600), 
-                    time_adjustable_interest=False))
+                    loan_duration=sp.int(3600),
+                    time_adjustable_interest=True))
 
     # # Verify that Bob owns the lender note.
     scenario.verify(lenderNote.data.ledger[0] == _bob.address)
@@ -192,7 +195,7 @@ def test():
                                       now=sp.timestamp(3601), valid=False, exception="EXPIRED")
 
     scenario += loanCore.repay(0).run(sender=_alice.address,
-                                      now=sp.timestamp(3599), valid=True)
+                                      now=sp.timestamp(1800), valid=True)
 
     scenario.verify(nonFungibleToken.data.ledger[0] == _alice.address)
     scenario.verify(borrowerNote.data.ledger.contains(0) == False)

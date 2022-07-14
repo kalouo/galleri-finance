@@ -46,7 +46,6 @@ class LoanCore(LibCommon.Ownable):
         sp.set_type(loan_duration, sp.TInt)
         sp.set_type(time_adjustable_interest, sp.TBool)
 
-
         # Verify that the call is coming from the origination controller.
 
         # Verify that the currency is permitted
@@ -130,12 +129,35 @@ class LoanCore(LibCommon.Ownable):
         sp.verify(sp.now <= loan.loan_origination_timestamp.add_seconds(
             loan.loan_duration), "EXPIRED")
 
+        interest_due = self._compute_interest_rate(loan.maximum_interest_amount,
+                                                   self.data.currency_precision[loan.loan_denomination_contract],
+                                                   loan.loan_duration,
+                                                   loan.loan_origination_timestamp,
+                                                   loan.time_adjustable_interest)
+
+        interest_fee = self._compute_interest_fee(interest_due,
+                                                  self.data.currency_precision[loan.loan_denomination_contract]
+                                                  )
+
+        sp.set_type(interest_fee, sp.TNat)
+        sp.set_type(interest_due, sp.TNat)
+        sp.set_type(loan.loan_principal_amount, sp.TNat)
+
+
         self._transfer_funds(borrower,
+                             sp.self_address,
+                             loan.loan_denomination_contract,
+                             loan.loan_denomination_id,
+                             loan.loan_principal_amount + interest_due
+                             )
+
+        self._transfer_funds(sp.self_address,
                              lender,
                              loan.loan_denomination_contract,
                              loan.loan_denomination_id,
-                             loan.loan_principal_amount
+                             sp.as_nat(loan.loan_principal_amount + interest_due - interest_fee)
                              )
+
         self._withdraw_collateral_from_vault(loan_id, borrower)
 
         self._burn_borrower_note(loan_id)
@@ -171,9 +193,17 @@ class LoanCore(LibCommon.Ownable):
     def set_processing_fee(self, new_processing_fee):
         sp.set_type(new_processing_fee, sp.TNat)
         self._only_owner()
-        sp.verify(new_processing_fee < 250, "INVALID_FEE")
+        sp.verify(new_processing_fee <= 250, "INVALID_FEE")
 
         self.data.processing_fee = new_processing_fee
+
+    @sp.entry_point
+    def set_interest_fee(self, new_interest_fee):
+        sp.set_type(new_interest_fee, sp.TNat)
+        self._only_owner()
+        sp.verify(new_interest_fee <= 2000, "INVALID_FEE")
+
+        self.data.interest_fee = new_interest_fee
 
     @sp.entry_point
     def whitelist_currency(self, currency, precision):
@@ -238,11 +268,27 @@ class LoanCore(LibCommon.Ownable):
         sp.verify(self.data.permitted_currencies.contains(
             currency) == True, "CURRENCY_NOT_AUTHORIZED")
 
+    def _compute_interest_rate(self, maximum_repayment_amount, currency_precision, loan_duration, loan_origination_timestamp, time_adjustable_interest):
+        sp.if time_adjustable_interest == True:
+            elapsed_seconds = sp.now - loan_origination_timestamp
+
+            basis_points = (sp.as_nat(elapsed_seconds) *
+                            Constants.BASIS_POINT_DIVISOR) / sp.as_nat(loan_duration)
+            return self._apply_percentage(maximum_repayment_amount, basis_points, currency_precision)
+        sp.else:
+            return maximum_repayment_amount
+
     def _compute_processing_fee(self, loan_amount, currency_precision):
         sp.set_type(loan_amount, sp.TNat)
         sp.set_type(currency_precision, sp.TNat)
 
         return self._apply_percentage(loan_amount, self.data.processing_fee, currency_precision)
+
+    def _compute_interest_fee(self, interest_due, currency_precision):
+        sp.set_type(interest_due, sp.TNat)
+        sp.set_type(currency_precision, sp.TNat)
+
+        return self._apply_percentage(interest_due, self.data.interest_fee, currency_precision)
 
     def _apply_percentage(self, base_amount, basis_points, precision):
         sp.set_type(base_amount, sp.TNat)
@@ -278,6 +324,7 @@ class LoanCore(LibCommon.Ownable):
         storage = {}
         storage["loan_id"] = sp.nat(0)
         storage['processing_fee'] = sp.nat(0)
+        storage['interest_fee'] = sp.nat(0)
 
         t_loan = sp.TRecord(
             collateral_contract=sp.TAddress,
