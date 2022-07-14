@@ -142,10 +142,6 @@ class LoanCore(LibCommon.Ownable):
                                                   self.data.currency_precision[loan.loan_denomination_contract]
                                                   )
 
-        sp.set_type(interest_fee, sp.TNat)
-        sp.set_type(interest_due, sp.TNat)
-        sp.set_type(loan.loan_principal_amount, sp.TNat)
-
         self._transfer_funds(borrower,
                              sp.self_address,
                              loan.loan_denomination_contract,
@@ -285,7 +281,6 @@ class LoanCore(LibCommon.Ownable):
         with sp.else_():
             sp.result(params.maximum_interest_amount)
 
-    
     def _compute_processing_fee(self, loan_amount, currency_precision):
         sp.set_type(loan_amount, sp.TNat)
         sp.set_type(currency_precision, sp.TNat)

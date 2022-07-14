@@ -134,6 +134,9 @@ def test():
 
     loanAmount = sp.nat(100) * PRECISION
     interest_amount = sp.nat(5) * PRECISION
+    time_adjusted_interest_amount = interest_amount / 2
+    expecte_interest_fee = time_adjusted_interest_amount / 10
+
     scenario += loanCore.start_loan(lender=_bob.address,
                                     borrower=_alice.address,
                                     loan_denomination_contract=fungibleToken.address,
@@ -185,6 +188,9 @@ def test():
                   operator=loanCore.address, token_id=0)
     )),
 
+    scenario.verify(fungibleToken.data.ledger[sp.pair(
+        _bob.address, 0)] == (sp.nat(900) * PRECISION))
+
     scenario += loanCore.repay(1).run(sender=_alice.address,
                                       valid=False, exception='NON-EXISTENT LOAN')
 
@@ -201,6 +207,17 @@ def test():
     scenario.verify(borrowerNote.data.ledger.contains(0) == False)
     scenario.verify(lenderNote.data.ledger.contains(0) == False)
 
+    scenario.verify(fungibleToken.data.ledger[sp.pair(
+        _bob.address, 0)] > (sp.nat(900) * PRECISION) + loanAmount)
+
+    scenario.verify(fungibleToken.data.ledger[sp.pair(
+        _bob.address, 0)] < (sp.nat(900) * PRECISION) + loanAmount + interest_amount)
+
+    scenario.verify(fungibleToken.data.ledger[sp.pair(
+        _bob.address, 0)] == (sp.nat(900) * PRECISION) + loanAmount + sp.as_nat(time_adjusted_interest_amount - expecte_interest_fee))
+
+    # scenario.verify(fungibleToken.data.ledger[sp.pair(
+    #     _bob.address, 0)] == sp.nat(bobBalanceBefore + loanAmount + interest_amount - expected_interest_fee))
     # scenario += loanCore.claim(1).run(sender=_bob.address,
     #                                   valid=False, exception='NON-EXISTENT LOAN')
 
