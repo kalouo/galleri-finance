@@ -28,6 +28,7 @@ class LoanCore(LibCommon.Ownable):
         loan_denomination_contract,
         loan_denomination_id,
         loan_principal_amount,
+        maximum_interest_amount,
         collateral_contract,
         collateral_token_id,
         loan_duration,
@@ -37,6 +38,7 @@ class LoanCore(LibCommon.Ownable):
         sp.set_type(borrower, sp.TAddress)
         sp.set_type(loan_denomination_contract, sp.TAddress)
         sp.set_type(loan_principal_amount, sp.TNat)
+        sp.set_type(maximum_interest_amount, sp.TNat)
         sp.set_type(loan_denomination_id, sp.TNat)
         sp.set_type(collateral_contract, sp.TAddress)
         sp.set_type(collateral_token_id, sp.TNat)
@@ -49,15 +51,14 @@ class LoanCore(LibCommon.Ownable):
 
         # Write loan to contract storage.
         self.data.loans_by_id[self.data.loan_id] = sp.record(
-            lender=lender,
-            borrower=borrower,
-            loan_denomination_contract=loan_denomination_contract,
-            loan_denomination_id=loan_denomination_id,
-            loan_principal_amount=loan_principal_amount,
             collateral_contract=collateral_contract,
             collateral_token_id=collateral_token_id,
+            loan_denomination_contract=loan_denomination_contract,
+            loan_denomination_id=loan_denomination_id,
+            loan_duration=loan_duration,
             loan_origination_timestamp=sp.now,
-            loan_duration=loan_duration
+            loan_principal_amount=loan_principal_amount,
+            maximum_interest_amount=maximum_interest_amount
         )
 
         # Transfer collateral to the collateral vault.
@@ -120,7 +121,7 @@ class LoanCore(LibCommon.Ownable):
                            loan_id,
                            t=sp.TAddress).open_some()
 
-        sp.verify(sp.sender == loan.borrower, "UNAUTHORIZED CALLER")
+        sp.verify(sp.sender == borrower, "UNAUTHORIZED CALLER")
 
         sp.verify(sp.now <= loan.loan_origination_timestamp.add_seconds(
             loan.loan_duration), "EXPIRED")
@@ -131,7 +132,7 @@ class LoanCore(LibCommon.Ownable):
                              loan.loan_denomination_id,
                              loan.loan_principal_amount
                              )
-        self._withdraw_collateral_from_vault(loan_id, loan.borrower)
+        self._withdraw_collateral_from_vault(loan_id, borrower)
 
         self._burn_borrower_note(loan_id)
         self._burn_lender_note(loan_id)
@@ -155,7 +156,7 @@ class LoanCore(LibCommon.Ownable):
         sp.verify(sp.now > loan.loan_origination_timestamp.add_seconds(
             loan.loan_duration), "NOT_EXPIRED")
 
-        self._withdraw_collateral_from_vault(loan_id, loan.lender)
+        self._withdraw_collateral_from_vault(loan_id, lender)
 
         self._burn_borrower_note(loan_id)
         self._burn_lender_note(loan_id)
@@ -275,15 +276,14 @@ class LoanCore(LibCommon.Ownable):
         storage['processing_fee'] = sp.nat(0)
 
         t_loan = sp.TRecord(
-            lender=sp.TAddress,
-            borrower=sp.TAddress,
-            loan_denomination_contract=sp.TAddress,
-            loan_denomination_id=sp.TNat,
-            loan_principal_amount=sp.TNat,
             collateral_contract=sp.TAddress,
             collateral_token_id=sp.TNat,
+            loan_denomination_contract=sp.TAddress,
+            loan_denomination_id=sp.TNat,
+            loan_duration=sp.TInt,
             loan_origination_timestamp=sp.TTimestamp,
-            loan_duration=sp.TInt
+            loan_principal_amount=sp.TNat,
+            maximum_interest_amount=sp.TNat
         )
 
         storage["loans_by_id"] = sp.big_map(tkey=sp.TNat, tvalue=t_loan)
