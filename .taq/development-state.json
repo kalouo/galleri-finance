@@ -1,0 +1,56 @@
+{
+    "operations": {},
+    "tasks": {
+        "@taqueria/plugin-smartpy.compile.1659894368257": {
+            "task": "compile",
+            "plugin": "@taqueria/plugin-smartpy",
+            "time": 1659894368257,
+            "output": []
+        },
+        "@taqueria/plugin-smartpy.compile.1659894411653": {
+            "task": "compile",
+            "plugin": "@taqueria/plugin-smartpy",
+            "time": 1659894411653,
+            "output": [
+                {
+                    "contract": "loan_core.py",
+                    "artifacts": [
+                        "loan_core"
+                    ]
+                }
+            ]
+        },
+        "@taqueria/plugin-smartpy.compile.1659894434458": {
+            "task": "compile",
+            "plugin": "@taqueria/plugin-smartpy",
+            "time": 1659894434458,
+            "output": [
+                {
+                    "contract": "loan_note.py",
+                    "artifacts": [
+                        "loan_note"
+                    ]
+                }
+            ]
+        },
+        "@taqueria/plugin-smartpy.compile.1659894463906": {
+            "task": "compile",
+            "plugin": "@taqueria/plugin-smartpy",
+            "time": 1659894463907,
+            "output": [
+                {
+                    "contract": "collateral_vault.py",
+                    "artifacts": [
+                        "collateral_vault"
+                    ]
+                }
+            ]
+        },
+        "@taqueria/plugin-smartpy.compile.1660037599922": {
+            "task": "compile",
+            "plugin": "@taqueria/plugin-smartpy",
+            "time": 1660037599923,
+            "output": []
+        }
+    }
+}
