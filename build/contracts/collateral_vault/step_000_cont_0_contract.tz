@@ -1,0 +1,183 @@
+parameter (or (pair %deposit (pair (nat %amount) (address %collateral_contract)) (pair (nat %collateral_token_id) (pair (nat %deposit_id) (address %depositor)))) (pair %withdraw (nat %deposit_id) (address %recipient)));
+storage   (pair (big_map %deposits nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount)))) (address %owner));
+code
+  {
+    UNPAIR;     # @parameter : @storage
+    IF_LEFT
+      {
+        # == deposit ==
+        # sp.verify(self.data.owner == sp.sender, 'Ownable: caller is not the owner') # @parameter%deposit : @storage
+        SENDER;     # @sender : @parameter%deposit : @storage
+        DUP 3;      # @storage : @sender : @parameter%deposit : @storage
+        CDR;        # address : @sender : @parameter%deposit : @storage
+        COMPARE;    # int : @parameter%deposit : @storage
+        EQ;         # bool : @parameter%deposit : @storage
+        IF
+          {}
+          {
+            PUSH string "Ownable: caller is not the owner"; # string : @parameter%deposit : @storage
+            FAILWITH;   # FAILED
+          }; # @parameter%deposit : @storage
+        # sp.transfer(sp.list([sp.set_type_expr(sp.record(from_ = params.depositor, txs = sp.list([sp.record(to_ = sp.self_address, token_id = params.collateral_token_id, amount = params.amount)])), sp.TRecord(from_ = sp.TAddress, txs = sp.TList(sp.TRecord(amount = sp.TNat, to_ = sp.TAddress, token_id = sp.TNat).layout(("to_", ("token_id", "amount"))))).layout(("from_", "txs")))]), sp.tez(0), sp.contract(sp.TList(sp.TRecord(from_ = sp.TAddress, txs = sp.TList(sp.TRecord(amount = sp.TNat, to_ = sp.TAddress, token_id = sp.TNat).layout(("to_", ("token_id", "amount"))))).layout(("from_", "txs"))), params.collateral_contract, entry_point='transfer').open_some()) # @parameter%deposit : @storage
+        DUP;        # @parameter%deposit : @parameter%deposit : @storage
+        CAR;        # pair (nat %amount) (address %collateral_contract) : @parameter%deposit : @storage
+        CDR;        # address : @parameter%deposit : @storage
+        CONTRACT %transfer (list (pair (address %from_) (list %txs (pair (address %to_) (pair (nat %token_id) (nat %amount)))))); # option (contract (list (pair (address %from_) (list %txs (pair (address %to_) (pair (nat %token_id) (nat %amount))))))) : @parameter%deposit : @storage
+        IF_NONE
+          {
+            PUSH int 82; # int : @parameter%deposit : @storage
+            FAILWITH;   # FAILED
+          }
+          {}; # @some : @parameter%deposit : @storage
+        NIL operation; # list operation : @some : @parameter%deposit : @storage
+        SWAP;       # @some : list operation : @parameter%deposit : @storage
+        PUSH mutez 0; # mutez : @some : list operation : @parameter%deposit : @storage
+        NIL (pair address (list (pair address (pair nat nat)))); # list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%deposit : @storage
+        NIL (pair address (pair nat nat)); # list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%deposit : @storage
+        DIG 5;      # @parameter%deposit : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @storage
+        DUP;        # @parameter%deposit : @parameter%deposit : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @storage
+        CAR;        # pair (nat %amount) (address %collateral_contract) : @parameter%deposit : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @storage
+        CAR;        # nat : @parameter%deposit : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @storage
+        SWAP;       # @parameter%deposit : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @storage
+        DUP;        # @parameter%deposit : @parameter%deposit : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @storage
+        DUG 7;      # @parameter%deposit : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%deposit : @storage
+        GET 3;      # nat : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%deposit : @storage
+        SELF_ADDRESS; # @self : nat : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%deposit : @storage
+        PAIR 3;     # pair @self (pair nat nat) : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%deposit : @storage
+        CONS;       # list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%deposit : @storage
+        DUP 6;      # @parameter%deposit : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%deposit : @storage
+        GET 6;      # address : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%deposit : @storage
+        PAIR;       # pair address (list (pair address (pair nat nat))) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%deposit : @storage
+        CONS;       # list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%deposit : @storage
+        TRANSFER_TOKENS; # operation : list operation : @parameter%deposit : @storage
+        CONS;       # list operation : @parameter%deposit : @storage
+        # self.data.deposits[params.deposit_id] = sp.record(collateral_contract = params.collateral_contract, collateral_token_id = params.collateral_token_id, deposit_amount = params.amount) # list operation : @parameter%deposit : @storage
+        DIG 2;      # @storage : list operation : @parameter%deposit
+        DUP;        # @storage : @storage : list operation : @parameter%deposit
+        CAR;        # big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation : @parameter%deposit
+        DIG 3;      # @parameter%deposit : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation
+        DUP;        # @parameter%deposit : @parameter%deposit : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation
+        CAR;        # pair (nat %amount) (address %collateral_contract) : @parameter%deposit : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation
+        CAR;        # nat : @parameter%deposit : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation
+        SWAP;       # @parameter%deposit : nat : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation
+        DUP;        # @parameter%deposit : @parameter%deposit : nat : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation
+        GET 3;      # nat : @parameter%deposit : nat : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation
+        SWAP;       # @parameter%deposit : nat : nat : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation
+        DUP;        # @parameter%deposit : @parameter%deposit : nat : nat : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation
+        DUG 6;      # @parameter%deposit : nat : nat : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation : @parameter%deposit
+        CAR;        # pair (nat %amount) (address %collateral_contract) : nat : nat : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation : @parameter%deposit
+        CDR;        # address : nat : nat : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation : @parameter%deposit
+        PAIR 3;     # pair address (pair nat nat) : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation : @parameter%deposit
+        SOME;       # option (pair address (pair nat nat)) : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation : @parameter%deposit
+        DIG 4;      # @parameter%deposit : option (pair address (pair nat nat)) : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation
+        GET 5;      # nat : option (pair address (pair nat nat)) : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation
+        UPDATE;     # big_map nat (pair address (pair nat nat)) : @storage : list operation
+        UPDATE 1;   # @storage : list operation
+        SWAP;       # list operation : @storage
+      }
+      {
+        # == withdraw ==
+        # sp.verify(self.data.owner == sp.sender, 'Ownable: caller is not the owner') # @parameter%withdraw : @storage
+        SENDER;     # @sender : @parameter%withdraw : @storage
+        DUP 3;      # @storage : @sender : @parameter%withdraw : @storage
+        CDR;        # address : @sender : @parameter%withdraw : @storage
+        COMPARE;    # int : @parameter%withdraw : @storage
+        EQ;         # bool : @parameter%withdraw : @storage
+        IF
+          {}
+          {
+            PUSH string "Ownable: caller is not the owner"; # string : @parameter%withdraw : @storage
+            FAILWITH;   # FAILED
+          }; # @parameter%withdraw : @storage
+        SWAP;       # @storage : @parameter%withdraw
+        # sp.verify(self.data.deposits.contains(params.deposit_id)) # @storage : @parameter%withdraw
+        DUP;        # @storage : @storage : @parameter%withdraw
+        DUG 2;      # @storage : @parameter%withdraw : @storage
+        CAR;        # big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @parameter%withdraw : @storage
+        SWAP;       # @parameter%withdraw : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage
+        DUP;        # @parameter%withdraw : @parameter%withdraw : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage
+        DUG 2;      # @parameter%withdraw : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @parameter%withdraw : @storage
+        CAR;        # nat : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @parameter%withdraw : @storage
+        MEM;        # bool : @parameter%withdraw : @storage
+        IF
+          {}
+          {
+            PUSH string "WrongCondition: self.data.deposits.contains(params.deposit_id)"; # string : @parameter%withdraw : @storage
+            FAILWITH;   # FAILED
+          }; # @parameter%withdraw : @storage
+        # sp.transfer(sp.list([sp.set_type_expr(sp.record(from_ = sp.self_address, txs = sp.list([sp.record(to_ = params.recipient, token_id = self.data.deposits[params.deposit_id].collateral_token_id, amount = self.data.deposits[params.deposit_id].deposit_amount)])), sp.TRecord(from_ = sp.TAddress, txs = sp.TList(sp.TRecord(amount = sp.TNat, to_ = sp.TAddress, token_id = sp.TNat).layout(("to_", ("token_id", "amount"))))).layout(("from_", "txs")))]), sp.tez(0), sp.contract(sp.TList(sp.TRecord(from_ = sp.TAddress, txs = sp.TList(sp.TRecord(amount = sp.TNat, to_ = sp.TAddress, token_id = sp.TNat).layout(("to_", ("token_id", "amount"))))).layout(("from_", "txs"))), self.data.deposits[params.deposit_id].collateral_contract, entry_point='transfer').open_some()) # @parameter%withdraw : @storage
+        NIL operation; # list operation : @parameter%withdraw : @storage
+        DUP 3;      # @storage : list operation : @parameter%withdraw : @storage
+        CAR;        # big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : list operation : @parameter%withdraw : @storage
+        DUP 3;      # @parameter%withdraw : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : list operation : @parameter%withdraw : @storage
+        CAR;        # nat : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : list operation : @parameter%withdraw : @storage
+        GET;        # option (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : list operation : @parameter%withdraw : @storage
+        IF_NONE
+          {
+            PUSH int 75; # int : list operation : @parameter%withdraw : @storage
+            FAILWITH;   # FAILED
+          }
+          {
+            # of_some: Get-item:75 # @some : list operation : @parameter%withdraw : @storage
+          }; # @some : list operation : @parameter%withdraw : @storage
+        CAR;        # address : list operation : @parameter%withdraw : @storage
+        CONTRACT %transfer (list (pair (address %from_) (list %txs (pair (address %to_) (pair (nat %token_id) (nat %amount)))))); # option (contract (list (pair (address %from_) (list %txs (pair (address %to_) (pair (nat %token_id) (nat %amount))))))) : list operation : @parameter%withdraw : @storage
+        IF_NONE
+          {
+            PUSH int 82; # int : list operation : @parameter%withdraw : @storage
+            FAILWITH;   # FAILED
+          }
+          {}; # @some : list operation : @parameter%withdraw : @storage
+        PUSH mutez 0; # mutez : @some : list operation : @parameter%withdraw : @storage
+        NIL (pair address (list (pair address (pair nat nat)))); # list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        NIL (pair address (pair nat nat)); # list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        DUP 7;      # @storage : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        CAR;        # big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        DUP 7;      # @parameter%withdraw : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        CAR;        # nat : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        GET;        # option (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        IF_NONE
+          {
+            PUSH int 75; # int : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+            FAILWITH;   # FAILED
+          }
+          {
+            # of_some: Get-item:75 # @some : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+          }; # @some : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        GET 4;      # nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        DUP 8;      # @storage : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        CAR;        # big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        DUP 8;      # @parameter%withdraw : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        CAR;        # nat : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        GET;        # option (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        IF_NONE
+          {
+            PUSH int 75; # int : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+            FAILWITH;   # FAILED
+          }
+          {
+            # of_some: Get-item:75 # @some : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+          }; # @some : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        GET 3;      # nat : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        DUP 8;      # @parameter%withdraw : nat : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        CDR;        # address : nat : nat : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        PAIR 3;     # pair address (pair nat nat) : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        CONS;       # list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        SELF_ADDRESS; # @self : list (pair address (pair nat nat)) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        PAIR;       # pair @self (list (pair address (pair nat nat))) : list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        CONS;       # list (pair address (list (pair address (pair nat nat)))) : mutez : @some : list operation : @parameter%withdraw : @storage
+        TRANSFER_TOKENS; # operation : list operation : @parameter%withdraw : @storage
+        CONS;       # list operation : @parameter%withdraw : @storage
+        # del self.data.deposits[params.deposit_id] # list operation : @parameter%withdraw : @storage
+        DIG 2;      # @storage : list operation : @parameter%withdraw
+        DUP;        # @storage : @storage : list operation : @parameter%withdraw
+        CAR;        # big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation : @parameter%withdraw
+        NONE (pair address (pair nat nat)); # option (pair address (pair nat nat)) : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation : @parameter%withdraw
+        DIG 4;      # @parameter%withdraw : option (pair address (pair nat nat)) : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation
+        CAR;        # nat : option (pair address (pair nat nat)) : big_map nat (pair (address %collateral_contract) (pair (nat %collateral_token_id) (nat %deposit_amount))) : @storage : list operation
+        UPDATE;     # big_map nat (pair address (pair nat nat)) : @storage : list operation
+        UPDATE 1;   # @storage : list operation
+        SWAP;       # list operation : @storage
+      }; # list operation : @storage
+    PAIR;       # pair (list operation) @storage
+  };
