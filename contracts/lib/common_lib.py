@@ -11,7 +11,7 @@ class Ownable(sp.Contract):
         sp.verify(self.data.owner == sp.sender,
                   "Ownable: caller is not the owner")
 
-    def _setOwner(self, address: sp.TAddress):
+    def _set_owner(self, address: sp.TAddress):
         """
                         Set a new owner!
         """
@@ -23,4 +23,4 @@ class Ownable(sp.Contract):
                         Current owner can renounce his ownership!
                         WARNING - cannot undo this
         """
-        self._setOwner(sp.address("tz1Ke2h7sDdakHJQh8WX4Z372du1KChsksyU"))
+        self._set_owner(sp.address("tz1Ke2h7sDdakHJQh8WX4Z372du1KChsksyU"))

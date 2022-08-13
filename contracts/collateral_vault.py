@@ -93,6 +93,11 @@ class CollateralVault(CommonLib.Ownable):
 
         FA2Lib.Transfer.execute(_currency, _from, _to, _tokenId, _amount)
 
+    @sp.entry_point
+    def set_owner(self, new_owner):
+        sp.set_type(new_owner, sp.TAddress)
+        self._set_owner(new_owner)
+
 
 if __name__ == "__main__":
 
