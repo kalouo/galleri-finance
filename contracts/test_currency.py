@@ -11,7 +11,7 @@ class TestCurrency(LibFA2.OwnableFA2Fungible):
 
 
 sp.add_compilation_target(
-    "test_nft",
+    "test_currency",
     TestCurrency(
         admin=Constants.NULL_ADDRESS,
         metadata=sp.utils.metadata_of_url("http://example.com")
