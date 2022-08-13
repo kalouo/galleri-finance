@@ -6,7 +6,7 @@ Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
 class TestCurrency(LibFA2.OwnableFA2Fungible):
 
     def __init__(self, admin, metadata, token_metadata={}, ledger={}, policy=None, metadata_base=None):
-        LibFA2.OwnableFA2NFT.__init__(
+        LibFA2.OwnableFA2Fungible.__init__(
             self, admin, metadata, token_metadata, ledger, policy, metadata_base)
 
 
