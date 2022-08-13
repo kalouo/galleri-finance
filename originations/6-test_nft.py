@@ -10,7 +10,6 @@ def deploy(chinstrapState, network, accounts):
             "ledger": {},
             "metadata": {'': '0x687474703a2f2f6578616d706c652e636f6d'},
             "operators": {},
-            "supply": {},
             "token_metadata": {},
         }
     )
