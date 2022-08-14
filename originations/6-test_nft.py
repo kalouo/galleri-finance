@@ -7,7 +7,7 @@ def deploy(chinstrapState, network, accounts):
         {
             "administrator": accounts[0].key.public_key_hash(),
             "last_token_id": 1,
-            "ledger": {0: accounts[0].key.public_key_hash()},
+            "ledger": {0: accounts[2].key.public_key_hash()},
             "metadata": {'': '0x687474703a2f2f6578616d706c652e636f6d'},
             "operators": {},
             "token_metadata": {
