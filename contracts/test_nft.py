@@ -11,10 +11,17 @@ class TestNFT(LibFA2.OwnableFA2NFT):
             self, admin, metadata, token_metadata, ledger, policy, metadata_base)
 
 
+NFT1 = LibFA2.Utils.make_metadata(
+    name="Example FA2",
+    decimals=0,
+    symbol="EFA2-2")
+
+
 sp.add_compilation_target(
     "test_nft",
     TestNFT(
         admin=Constants.NULL_ADDRESS,
-        metadata=sp.utils.metadata_of_url("http://example.com")
-    )
-)
+        metadata=sp.utils.metadata_of_url("http://example.com"),
+        ledger={0: Constants.NULL_ADDRESS},
+        token_metadata=[NFT1]
+    ))
