@@ -12,9 +12,9 @@ class TestCurrency(LibFA2.OwnableFA2Fungible):
 
 
 CCY1 = LibFA2.Utils.make_metadata(
-    name="Example FA2",
+    name="Sandbox USDT",
     decimals=18,
-    symbol="EFA2-2")
+    symbol="sUSDT")
 
 sp.add_compilation_target(
     "test_currency",
