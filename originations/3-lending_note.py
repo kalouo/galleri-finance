@@ -2,7 +2,7 @@ from chinstrap.originations import getContract
 
 
 def deploy(chinstrapState, network, accounts):
-    contract = getContract("loan_note")
+    contract = getContract("lender_note")
     initial_storage = contract.storage.encode(
         {
             "ledger": {},

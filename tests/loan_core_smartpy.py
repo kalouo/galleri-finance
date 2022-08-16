@@ -1,7 +1,8 @@
 import smartpy as sp
 
 LoanCore = sp.io.import_script_from_url("file:contracts/loan_core.py")
-LoanNote = sp.io.import_script_from_url("file:contracts/loan_note.py")
+LenderNote = sp.io.import_script_from_url("file:contracts/lender_note.py")
+BorrowerNote = sp.io.import_script_from_url("file:contracts/borrower_note.py")
 Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
 FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2_lib.py")
 CollateralVault = sp.io.import_script_from_url(
@@ -24,8 +25,8 @@ def test():
     fungibleToken = FA2Lib.OwnableFA2Fungible(_admin.address, SAMPLE_METADATA)
     loanCore = LoanCore.LoanCore(_admin.address)
     collateralVault = CollateralVault.CollateralVault(loanCore.address)
-    borrowerNote = LoanNote.LoanNote(loanCore.address, SAMPLE_METADATA)
-    lenderNote = LoanNote.LoanNote(loanCore.address, SAMPLE_METADATA)
+    borrowerNote = BorrowerNote.BorrowerNote(loanCore.address, SAMPLE_METADATA)
+    lenderNote = LenderNote.LenderNote(loanCore.address, SAMPLE_METADATA)
     # Add contracts to scenarios
     scenario += nonFungibleToken
     scenario += fungibleToken

@@ -104,14 +104,3 @@ class Mint:
         """
 
         return sp.set_type_expr(sp.record(to=to, token_id=token_id, metadata=Mint.make_metadata("LN", "Lending LoanNote", 0)), Mint.get_type())
-
-
-if __name__ == "__main__":
-
-    sp.add_compilation_target(
-        "loan_note",
-        LoanNote(
-            admin=sp.address("tz1YtuZ4vhzzn7ssCt93Put8U9UJDdvCXci4"),
-            metadata=sp.utils.metadata_of_url("http://example.com")
-        )
-    )

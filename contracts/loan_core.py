@@ -10,7 +10,7 @@ Constants = import_sp("contracts/lib/constants.py")
 
 LibFA2 = import_sp("contracts/lib/FA2_lib.py")
 LibCommon = import_sp("contracts/lib/common_lib.py")
-LibLoanNote = import_sp("contracts/loan_note.py")
+LibLoanNote = import_sp("contracts/lib/loan_note.py")
 LibCollateralVault = import_sp("contracts/collateral_vault.py")
 
 
