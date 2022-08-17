@@ -102,5 +102,5 @@ class Mint:
         Returns:
             sp.record: arguments for `mint` function
         """
-
+        #TODO: Customize metadata.
         return sp.set_type_expr(sp.record(to=to, token_id=token_id, metadata=Mint.make_metadata("LN", "Lending LoanNote", 0)), Mint.get_type())
