@@ -14,17 +14,10 @@ class BorrowerNote(LibLoanNote.LoanNote):
 
 if __name__ == "__main__":
 
-    METADATA = LibFA2.Utils.make_metadata(
-        name="Pawn Borrower Note",
-        decimals=0,
-        symbol="pBN")
-
     sp.add_compilation_target(
         "borrower_note",
         BorrowerNote(
             admin=sp.address("tz1YtuZ4vhzzn7ssCt93Put8U9UJDdvCXci4"),
             metadata=sp.utils.metadata_of_url("http://example.com"),
-            ledger={(Constants.NULL_ADDRESS, 0): 100},
-            token_metadata=[METADATA],
         )
     )
