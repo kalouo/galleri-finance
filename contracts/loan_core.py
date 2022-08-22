@@ -14,6 +14,22 @@ LibLoanNote = import_sp("contracts/lib/loan_note.py")
 LibCollateralVault = import_sp("contracts/collateral_vault.py")
 
 
+class StartLoan:
+    def get_type():
+        return sp.TRecord(
+            lender=sp.TAddress,
+            borrower=sp.TAddress,
+            collateral_contract=sp.TAddress,
+            collateral_token_id=sp.TNat,
+            loan_denomination_contract=sp.TAddress,
+            loan_denomination_token_id=sp.TNat,
+            loan_duration=sp.TInt,
+            loan_principal_amount=sp.TNat,
+            interest_amount=sp.TNat,
+            time_adjustable_interest=sp.TBool
+        )
+
+
 class LoanCore(LibCommon.Ownable):
     def __init__(self, owner):
         LibCommon.Ownable.__init__(self, owner)
@@ -26,9 +42,9 @@ class LoanCore(LibCommon.Ownable):
         lender,
         borrower,
         loan_denomination_contract,
-        loan_denomination_id,
+        loan_denomination_token_id,
         loan_principal_amount,
-        maximum_interest_amount,
+        interest_amount,
         collateral_contract,
         collateral_token_id,
         loan_duration,
@@ -39,8 +55,8 @@ class LoanCore(LibCommon.Ownable):
         sp.set_type(borrower, sp.TAddress)
         sp.set_type(loan_denomination_contract, sp.TAddress)
         sp.set_type(loan_principal_amount, sp.TNat)
-        sp.set_type(maximum_interest_amount, sp.TNat)
-        sp.set_type(loan_denomination_id, sp.TNat)
+        sp.set_type(interest_amount, sp.TNat)
+        sp.set_type(loan_denomination_token_id, sp.TNat)
         sp.set_type(collateral_contract, sp.TAddress)
         sp.set_type(collateral_token_id, sp.TNat)
         sp.set_type(loan_duration, sp.TInt)
@@ -56,11 +72,11 @@ class LoanCore(LibCommon.Ownable):
             collateral_contract=collateral_contract,
             collateral_token_id=collateral_token_id,
             loan_denomination_contract=loan_denomination_contract,
-            loan_denomination_id=loan_denomination_id,
+            loan_denomination_token_id=loan_denomination_token_id,
             loan_duration=loan_duration,
             loan_origination_timestamp=sp.now,
             loan_principal_amount=loan_principal_amount,
-            maximum_interest_amount=maximum_interest_amount,
+            interest_amount=interest_amount,
             time_adjustable_interest=time_adjustable_interest
         )
 
@@ -76,7 +92,7 @@ class LoanCore(LibCommon.Ownable):
         self._transfer_funds(lender,
                              sp.self_address,
                              loan_denomination_contract,
-                             loan_denomination_id,
+                             loan_denomination_token_id,
                              loan_principal_amount
                              )
 
@@ -93,7 +109,7 @@ class LoanCore(LibCommon.Ownable):
         self._transfer_funds(sp.self_address,
                              borrower,
                              loan_denomination_contract,
-                             loan_denomination_id,
+                             loan_denomination_token_id,
                              net_loan_amount
                              )
 
@@ -130,7 +146,7 @@ class LoanCore(LibCommon.Ownable):
             loan.loan_duration), "EXPIRED")
 
         params = sp.record(
-            maximum_interest_amount=loan.maximum_interest_amount,
+            interest_amount=loan.interest_amount,
             currency_precision=self.data.currency_precision[loan.loan_denomination_contract],
             loan_duration=loan.loan_duration,
             loan_origination_timestamp=loan.loan_origination_timestamp,
@@ -145,14 +161,14 @@ class LoanCore(LibCommon.Ownable):
         self._transfer_funds(borrower,
                              sp.self_address,
                              loan.loan_denomination_contract,
-                             loan.loan_denomination_id,
+                             loan.loan_denomination_token_id,
                              loan.loan_principal_amount + interest_due
                              )
 
         self._transfer_funds(sp.self_address,
                              lender,
                              loan.loan_denomination_contract,
-                             loan.loan_denomination_id,
+                             loan.loan_denomination_token_id,
                              sp.as_nat(loan.loan_principal_amount +
                                        interest_due - interest_fee)
                              )
@@ -276,10 +292,10 @@ class LoanCore(LibCommon.Ownable):
             basis_points = (sp.as_nat(elapsed_seconds) *
                             Constants.BASIS_POINT_DIVISOR) / sp.as_nat(params.loan_duration)
             sp.result(self._apply_percentage(
-                params.maximum_interest_amount, basis_points, params.currency_precision))
+                params.interest_amount, basis_points, params.currency_precision))
 
         with sp.else_():
-            sp.result(params.maximum_interest_amount)
+            sp.result(params.interest_amount)
 
     def _compute_processing_fee(self, loan_amount, currency_precision):
         sp.set_type(loan_amount, sp.TNat)
@@ -333,11 +349,11 @@ class LoanCore(LibCommon.Ownable):
             collateral_contract=sp.TAddress,
             collateral_token_id=sp.TNat,
             loan_denomination_contract=sp.TAddress,
-            loan_denomination_id=sp.TNat,
+            loan_denomination_token_id=sp.TNat,
             loan_duration=sp.TInt,
             loan_origination_timestamp=sp.TTimestamp,
             loan_principal_amount=sp.TNat,
-            maximum_interest_amount=sp.TNat,
+            interest_amount=sp.TNat,
             time_adjustable_interest=sp.TBool
         )
 

@@ -7,6 +7,7 @@ def import_sp(file_path):
 
 Constants = import_sp("contracts/lib/constants.py")
 LibCommon = import_sp("contracts/lib/common_lib.py")
+LibLoanCore = import_sp("contracts/loan_core.py")
 
 
 class OriginationController(LibCommon.Ownable):
@@ -59,8 +60,29 @@ class OriginationController(LibCommon.Ownable):
         del self.data.requests_by_id[request_id]
 
     @sp.entry_point
-    def originate_loan(self):
-        pass
+    def originate_loan(self, request_id):
+        sp.set_type(request_id, sp.TNat)
+
+        request = self.data.requests_by_id[request_id]
+
+        payload = sp.record(
+            lender=sp.sender,
+            borrower=request.creator,
+            loan_denomination_contract=request.loan_denomination_contract,
+            loan_denomination_token_id=request.loan_denomination_token_id,
+            loan_principal_amount=request.loan_principal_amount,
+            interest_amount=request.interest_amount,
+            collateral_contract=request.collateral_contract,
+            collateral_token_id=request.collateral_token_id,
+            loan_duration=request.loan_duration,
+            time_adjustable_interest=request.time_adjustable_interest
+        )
+
+        loan_manager = sp.contract(LibLoanCore.StartLoan.get_type(),
+                                   self.data.loan_manager,
+                                   entry_point='start_loan').open_some()
+
+        sp.transfer(payload, sp.mutez(0), loan_manager)
 
     @sp.entry_point
     def set_loan_manager(self, loan_manager_address):

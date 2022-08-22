@@ -141,9 +141,9 @@ def test():
     scenario += loanCore.start_loan(lender=_bob.address,
                                     borrower=_alice.address,
                                     loan_denomination_contract=fungibleToken.address,
-                                    loan_denomination_id=sp.nat(0),
+                                    loan_denomination_token_id=sp.nat(0),
                                     loan_principal_amount=loanAmount,
-                                    maximum_interest_amount=interest_amount,
+                                    interest_amount=interest_amount,
                                     collateral_contract=nonFungibleToken.address,
                                     collateral_token_id=sp.nat(0),
                                     loan_duration=sp.int(3600),
@@ -152,9 +152,9 @@ def test():
 
     scenario.verify(loanCore.get_loan_by_id(0) == sp.record(
                     loan_denomination_contract=fungibleToken.address,
-                    loan_denomination_id=0,
+                    loan_denomination_token_id=0,
                     loan_principal_amount=loanAmount,
-                    maximum_interest_amount=interest_amount,
+                    interest_amount=interest_amount,
                     collateral_contract=nonFungibleToken.address,
                     collateral_token_id=0,
                     loan_origination_timestamp=sp.timestamp(0),
