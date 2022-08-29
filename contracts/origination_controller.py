@@ -94,6 +94,11 @@ class OriginationController(LibCommon.Ownable):
         sp.set_type(new_owner, sp.TAddress)
         self._set_owner(new_owner)
 
+    @sp.onchain_view()
+    def get_request_by_id(self, request_id):
+        sp.set_type(request_id, sp.TNat)
+        sp.result(self.data.requests_by_id[request_id])
+
     def _increment_request_id(self):
         self.data.request_id += 1
 
@@ -118,9 +123,13 @@ class OriginationController(LibCommon.Ownable):
         return storage
 
 
-sp.add_compilation_target(
-    "origination_controller",
-    OriginationController(
-        owner=Constants.NULL_ADDRESS,
-        loan_manager=Constants.NULL_ADDRESS
-    ))
+
+if __name__ == "__main__":
+
+    sp.add_compilation_target(
+        "origination_controller",
+        OriginationController(
+            owner=Constants.NULL_ADDRESS,
+            loan_manager=Constants.NULL_ADDRESS
+        )
+    )

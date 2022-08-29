@@ -1,12 +1,17 @@
 import smartpy as sp
 
-LoanCore = sp.io.import_script_from_url("file:contracts/loan_core.py")
-LenderNote = sp.io.import_script_from_url("file:contracts/lender_note.py")
-BorrowerNote = sp.io.import_script_from_url("file:contracts/borrower_note.py")
-Constants = sp.io.import_script_from_url("file:contracts/lib/constants.py")
-FA2Lib = sp.io.import_script_from_url("file:contracts/lib/FA2_lib.py")
-CollateralVault = sp.io.import_script_from_url(
-    "file:contracts/collateral_vault.py")
+
+def import_sp(file_path):
+    return sp.io.import_script_from_url("file:" + file_path)
+
+
+BorrowerNote = import_sp("contracts/borrower_note.py")
+CollateralVault = import_sp("contracts/collateral_vault.py")
+Constants = import_sp("contracts/lib/constants.py")
+FA2Lib = import_sp("contracts/lib/FA2_lib.py")
+LenderNote = import_sp("contracts/lender_note.py")
+LoanCore = import_sp("contracts/loan_core.py")
+OriginationController = import_sp("contracts/origination_controller.py")
 
 SAMPLE_METADATA = sp.utils.metadata_of_url("http://example.com")
 
@@ -25,14 +30,18 @@ def test():
     fungibleToken = FA2Lib.OwnableFA2Fungible(_admin.address, SAMPLE_METADATA)
     loanCore = LoanCore.LoanCore(_admin.address)
     collateralVault = CollateralVault.CollateralVault(loanCore.address)
+    originationController = OriginationController.OriginationController(
+        _admin.address, loanCore.address)
     borrowerNote = BorrowerNote.BorrowerNote(loanCore.address, SAMPLE_METADATA)
     lenderNote = LenderNote.LenderNote(loanCore.address, SAMPLE_METADATA)
+
     # Add contracts to scenarios
     scenario += nonFungibleToken
     scenario += fungibleToken
 
     scenario += loanCore
     scenario += collateralVault
+    scenario += originationController
     scenario += borrowerNote
     scenario += lenderNote
 
@@ -68,6 +77,12 @@ def test():
     scenario.verify(loanCore.data.borrower_note_address ==
                     borrowerNote.address)
     scenario.verify(loanCore.data.lender_note_address == lenderNote.address)
+
+    scenario += loanCore.add_origination_controller(
+        originationController.address).run(sender=_admin)
+
+    scenario.verify(
+        loanCore.data.origination_controllers[originationController.address] == True)
 
     TOKEN_0 = FA2Lib.Utils.make_metadata(
         name="Example FA2",
@@ -109,7 +124,7 @@ def test():
     # See https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md#nft-asset-contract
     scenario.verify(nonFungibleToken.data.ledger[0] == _alice.address)
 
-    # Alice approves the loan contract to spend her funds.
+    # Bob approves the loan contract to spend his funds.
     scenario += fungibleToken.update_operators([sp.variant("add_operator", sp.record(
         owner=_bob.address,
         operator=loanCore.address,
@@ -121,6 +136,7 @@ def test():
         sp.record(owner=_bob.address, operator=loanCore.address, token_id=0)
     )),
 
+    # Alice approves the loan contract to transfer her NFT.
     scenario += nonFungibleToken.update_operators([sp.variant("add_operator", sp.record(
         owner=_alice.address,
         operator=collateralVault.address,
@@ -138,6 +154,31 @@ def test():
     time_adjusted_interest_amount = interest_amount / 2
     expecte_interest_fee = time_adjusted_interest_amount / 10
 
+    # Alice requests a loan
+
+    scenario += originationController.create_request(
+        loan_denomination_contract=fungibleToken.address,
+        loan_denomination_token_id=sp.nat(0),
+        loan_principal_amount=loanAmount,
+        interest_amount=interest_amount,
+        collateral_contract=nonFungibleToken.address,
+        collateral_token_id=sp.nat(0),
+        loan_duration=sp.int(3600),
+        time_adjustable_interest=True
+    ).run(sender=_alice)
+
+    scenario.verify(originationController.get_request_by_id(0) == sp.record(
+        creator=_alice.address,
+        loan_denomination_contract=fungibleToken.address,
+        loan_denomination_token_id=sp.nat(0),
+        loan_principal_amount=loanAmount,
+        interest_amount=interest_amount,
+        collateral_contract=nonFungibleToken.address,
+        collateral_token_id=sp.nat(0),
+        loan_duration=sp.int(3600),
+        time_adjustable_interest=True
+    ))
+
     scenario += loanCore.start_loan(lender=_bob.address,
                                     borrower=_alice.address,
                                     loan_denomination_contract=fungibleToken.address,
@@ -148,7 +189,11 @@ def test():
                                     collateral_token_id=sp.nat(0),
                                     loan_duration=sp.int(3600),
                                     time_adjustable_interest=True
-                                    ).run(now=sp.timestamp(0))
+                                    ).run(sender=_admin, valid=False, exception="ORIGINATOR_NOT_AUTHORIZED")
+
+    # Bob originates the loan.
+    scenario += originationController.originate_loan(
+        0).run(sender=_bob, now=sp.timestamp(0))
 
     scenario.verify(loanCore.get_loan_by_id(0) == sp.record(
                     loan_denomination_contract=fungibleToken.address,
@@ -178,6 +223,7 @@ def test():
     scenario.verify(fungibleToken.data.ledger[sp.pair(
         _alice.address, 0)] == sp.nat(1099) * PRECISION)
 
+    # Alice approves repayment amount.
     scenario += fungibleToken.update_operators([sp.variant("add_operator", sp.record(
         owner=_alice.address,
         operator=loanCore.address,

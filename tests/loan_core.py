@@ -230,7 +230,7 @@ class LoanCore(LibCommon.Ownable):
         self.data.currency_precision[currency] = precision
 
     @sp.entry_point
-    def add_origination_controller(self, origination_controller_address):
+    def whitelist_origination_controller(self, origination_controller_address):
         sp.set_type(origination_controller_address, sp.TAddress)
 
         self._only_owner()
