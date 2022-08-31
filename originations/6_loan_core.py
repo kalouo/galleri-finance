@@ -14,6 +14,7 @@ def deploy(chinstrapState, network, accounts):
             "currency_precision": {},
             "loans_by_id": {},
             "permitted_currencies": {},
+            "origination_controllers": {},
             "owner": accounts[0].key.public_key_hash()
         }
     )
