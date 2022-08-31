@@ -10,7 +10,7 @@ def deploy(chinstrapState, network, accounts):
             "token_metadata": {},
             "last_token_id": 0,
             "metadata": {'': '0x687474773a2f2f6578616d706c652e636f6d'},
-            "administrator": accounts[1].key.public_key_hash()
+            "administrator": accounts[0].key.public_key_hash()
         }
     )
     return initial_storage, contract
