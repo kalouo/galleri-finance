@@ -83,6 +83,7 @@ class OriginationController(LibCommon.Ownable):
                                    entry_point='start_loan').open_some()
 
         sp.transfer(payload, sp.mutez(0), loan_manager)
+        del self.data.requests_by_id[request_id]
 
     @sp.entry_point
     def set_loan_manager(self, loan_manager_address):
